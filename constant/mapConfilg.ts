@@ -1,0 +1,80 @@
+export const mapLayerDetailConfig = [
+  {
+    name: "Malls",
+    id: "delhi_malls_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/Malls.json",
+  },
+  {
+    name: "Furniture",
+    id: "delhi_furniture_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/Furniture.json",
+  },
+  {
+    name: "Electronics",
+    id: "delhi_electronics_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/Electronics.json",
+  },
+  {
+    name: "Leisure",
+    id: "delhi_leisure_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/Leisure.json",
+  },
+  {
+    name: "Medical",
+    id: "delhi_medical_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/Medical.json",
+  },
+  {
+    name: "Transport",
+    id: "delhi_transport_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/Transport.json",
+  },
+  {
+    name: "Companies",
+    id: "delhi_companies_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/companeis.json",
+  },
+  {
+    name: "Education",
+    id: "delhi_education_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/edication.json",
+  },
+  {
+    name: "Fashion",
+    id: "delhi_fashion_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/fashion.json",
+  },
+  {
+    name: "Fitness",
+    id: "delhi_fitness_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/fitness.json",
+  },
+  {
+    name: "Food",
+    id: "delhi_food_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/food.json",
+  },
+  {
+    name: "Others",
+    id: "delhi_others_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/others.json",
+  },
+  {
+    name: "Supermarket",
+    id: "delhi_supermarket_data",
+    color: "#ffb6c1",
+    targetPath: "site_analysis_delhi/supermarket.json",
+  },
+];
