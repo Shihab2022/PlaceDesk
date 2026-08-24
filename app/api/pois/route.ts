@@ -1,3 +1,4 @@
+// app/api/pois/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -20,20 +21,17 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Remove leading slash if provided
+    // 1. Clean and normalize target path
     let cleanPath = filePath.startsWith("/") ? filePath.slice(1) : filePath;
 
-    // Remove repository name if it was included in the path
     if (cleanPath.startsWith(`${GITHUB_REPO}/`)) {
       cleanPath = cleanPath.slice(GITHUB_REPO.length + 1);
     }
 
-    const url =
-      `https://api.github.com/repos/` +
-      `${GITHUB_OWNER}/${GITHUB_REPO}/contents/` +
-      `${cleanPath}?ref=main`;
+    // 2. Fetch repo tree to locate target file's SHA pointer
+    const treeUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/trees/main?recursive=1`;
 
-    const response = await fetch(url, {
+    const treeResponse = await fetch(treeUrl, {
       headers: {
         Authorization: `Bearer ${GITHUB_TOKEN}`,
         Accept: "application/vnd.github+json",
@@ -42,61 +40,66 @@ export async function GET(request: NextRequest) {
       next: { revalidate: 3600 },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-
+    if (!treeResponse.ok) {
+      const errorText = await treeResponse.text();
       return NextResponse.json(
         {
-          error: "GitHub API error",
-          status: response.status,
+          error: "Failed to fetch repository tree from GitHub",
+          status: treeResponse.status,
           details: errorText,
         },
-        { status: response.status },
+        { status: treeResponse.status },
       );
     }
 
-    const githubData = await response.json();
+    const treeData = await treeResponse.json();
 
-    // Make sure GitHub returned a file
-    if (githubData.type !== "file") {
-      return NextResponse.json(
-        {
-          error: "The GitHub path does not point to a file",
-          type: githubData.type,
-        },
-        { status: 400 },
-      );
-    }
-
-    if (!githubData.content) {
-      return NextResponse.json(
-        {
-          error: "GitHub response does not contain file content",
-        },
-        { status: 500 },
-      );
-    }
-
-    // GitHub returns the file content as Base64
-    const base64Content = githubData.content.replace(/\n/g, "");
-
-    // Decode Base64
-    const decodedContent = Buffer.from(base64Content, "base64").toString(
-      "utf-8",
+    // Match path against tree entries
+    const fileNode = treeData.tree?.find(
+      (item: { path: string; type: string }) =>
+        item.path === cleanPath && item.type === "blob",
     );
 
-    // Convert JSON string into actual JavaScript object/array
-    const data = JSON.parse(decodedContent);
+    if (!fileNode || !fileNode.sha) {
+      return NextResponse.json(
+        { error: `File not found in GitHub repository: ${cleanPath}` },
+        { status: 404 },
+      );
+    }
 
-    // Return ONLY the actual Malls.json data
+    // 3. Retrieve raw file contents via Git Blobs API (supports files up to 100 MB)
+    const blobUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/git/blobs/${fileNode.sha}`;
+
+    const blobResponse = await fetch(blobUrl, {
+      headers: {
+        Authorization: `Bearer ${GITHUB_TOKEN}`,
+        Accept: "application/vnd.github.raw+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+      },
+      next: { revalidate: 3600 },
+    });
+
+    if (!blobResponse.ok) {
+      const errorText = await blobResponse.text();
+      return NextResponse.json(
+        {
+          error: "Failed to fetch raw blob content from GitHub",
+          status: blobResponse.status,
+          details: errorText,
+        },
+        { status: blobResponse.status },
+      );
+    }
+
+    const rawContent = await blobResponse.text();
+    const data = JSON.parse(rawContent);
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("Failed to fetch GitHub file:", error);
 
     return NextResponse.json(
-      {
-        error: "Failed to fetch or parse GitHub JSON file",
-      },
+      { error: "Failed to fetch or parse GitHub JSON file" },
       { status: 500 },
     );
   }
