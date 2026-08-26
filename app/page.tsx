@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Header from "@/components/spatic/layout/Header";
 import Sidebar from "@/components/spatic/layout/Sidebar";
 import ProjectBar from "@/components/spatic/layout/ProjectBar";
-import WorkspacePanel from "@/components/spatic/layers/WorkspacePanel";
+// import WorkspacePanel from "@/components/spatic/layers/WorkspacePanel";
 import type {
   LayerFiltersState,
   LayerStyleState,
@@ -205,7 +205,7 @@ export default function HomePage() {
             )}
 
             {/* Left workspace panel */}
-            <div
+            {/* <div
               className={`absolute inset-y-0 left-0 z-40 flex h-full w-[312px] max-w-[85vw] transition-transform duration-200 lg:relative lg:z-auto lg:w-[336px] lg:translate-x-0 ${
                 panelOpen ? "translate-x-0" : "-translate-x-full"
               }`}
@@ -224,7 +224,7 @@ export default function HomePage() {
                 filters={filters}
                 onFilters={setFilters}
               />
-            </div>
+            </div> */}
 
             {/* Map region — the hero */}
             <div className="relative min-h-0 min-w-0 flex-1 bg-canvas">
