@@ -14,23 +14,7 @@ import {
   FiTruck,
 } from "react-icons/fi";
 import { mapLayerDetailConfig } from "../../../constant/mapConfilg";
-import type { CategoryConfig, CategoryKey } from "./types";
-
-export const CATEGORY_KEYS: CategoryKey[] = [
-  "malls",
-  "furniture",
-  "electronics",
-  "leisure",
-  "medical",
-  "transport",
-  "companies",
-  "education",
-  "fashion",
-  "fitness",
-  "food",
-  "others",
-  "supermarket",
-];
+import { CATEGORY_KEYS, type CategoryConfig, type CategoryKey } from "./types";
 
 /** Geography labels used by the (preserved) Delhi layer config. */
 const LABEL_BY_KEY: Record<CategoryKey, string> = {

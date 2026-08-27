@@ -8,6 +8,7 @@ import {
   type Appearance,
   type CategoryKey,
   type CityDef,
+  type FilterValue,
   type LayerState,
   type LocationData,
   type VisualizationType,
@@ -31,7 +32,7 @@ export interface MapLayerApi {
       color?: string;
     },
   ) => void;
-  setFilters: (id: string, filters: Record<string, unknown>) => void;
+  setFilters: (id: string, filters: Record<string, FilterValue>) => void;
   clearFilters: (id: string) => void;
   reloadLayer: (id: string) => void;
 }
@@ -85,7 +86,15 @@ export function useMapLayers(city: CityDef): MapLayerApi {
         if (ver !== versionRef.current) return;
         patch((ls) =>
           ls.map((l) =>
-            l.id === id ? { ...l, loading: false, data, dataLoaded: true } : l,
+            l.id === id
+              ? {
+                  ...l,
+                  loading: false,
+                  data,
+                  dataLoaded: true,
+                  filteredData: data,
+                }
+              : l,
           ),
         );
       } catch (e) {
@@ -131,6 +140,7 @@ export function useMapLayers(city: CityDef): MapLayerApi {
       name: `${cat.label} — ${c.label}`,
       data: [],
       dataLoaded: false,
+      loading: true,
       visible: true,
       visualizationType: "point",
       appearance: makeAppearance(cat.color),
@@ -141,14 +151,15 @@ export function useMapLayers(city: CityDef): MapLayerApi {
 
   // City switch: reload all layers, preserve config, rename, refresh.
   useEffect(() => {
-    if (lastCityRef.current === city) return;
-    lastCityRef.current = city;
+    if (lastCityRef.current === city.id) return;
+    lastCityRef.current = city.id;
     versionRef.current += 1;
     patch((ls) =>
       ls.map((l) => ({
         ...l,
         name: `${l.label} — ${cityRef.current.label}`,
         data: [],
+        filteredData: [],
         dataLoaded: false,
         loading: true,
         error: undefined,
@@ -171,6 +182,7 @@ export function useMapLayers(city: CityDef): MapLayerApi {
         name: `${cat.label} — ${c.label}`,
         data: [],
         dataLoaded: false,
+        loading: true,
         visible: true,
         visualizationType: "point",
         appearance: makeAppearance(cat.color),
@@ -231,9 +243,12 @@ export function useMapLayers(city: CityDef): MapLayerApi {
     [patch],
   );
 
-  const setFilters = useCallback((id: string, filters: Record<string, unknown>) => {
-    patch((ls) => ls.map((l) => (l.id === id ? { ...l, filters } : l)));
-  }, [patch]);
+    const setFilters = useCallback(
+    (id: string, filters: Record<string, FilterValue>) => {
+      patch((ls) => ls.map((l) => (l.id === id ? { ...l, filters } : l)));
+    },
+    [patch],
+  );
 
   const clearFilters = useCallback((id: string) => {
     patch((ls) => ls.map((l) => (l.id === id ? { ...l, filters: {} } : l)));
@@ -253,6 +268,15 @@ export function useMapLayers(city: CityDef): MapLayerApi {
     [layers],
   );
 
+  // Initial seed: one default layer (Malls) — the only data loaded on startup.
+  useEffect(() => {
+    if (seededRef.current || layersRef.current.length > 0) return;
+    seededRef.current = true;
+    addLayer("malls");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+/* end of hook */
   const activeKeys = useMemo(
     () => new Set(computed.map((l) => l.categoryKey)),
     [computed],

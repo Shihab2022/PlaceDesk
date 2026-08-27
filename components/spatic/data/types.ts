@@ -89,6 +89,11 @@ export interface Appearance {
   lineWidth: number; // px
 }
 
+/** A layer plus its computed (filtered) dataset. */
+export interface ComputedLayer extends LayerState {
+  filteredData: LocationData[];
+}
+
 export type FilterValue = string | number | string[] | [number, number] | undefined;
 
 /* Filters */

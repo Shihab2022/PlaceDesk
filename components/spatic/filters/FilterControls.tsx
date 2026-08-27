@@ -54,7 +54,7 @@ function FilterMulti({
   options: string[];
   onPick: (next: string[]) => void;
 }) {
-  const selected = Array.isArray(value) ? value : [];
+  const selected: string[] = Array.isArray(value) ? (value as string[]) : [];
   return (
     <div>
       <Label>{def.label}</Label>

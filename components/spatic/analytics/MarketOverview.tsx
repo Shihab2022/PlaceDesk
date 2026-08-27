@@ -1,28 +1,26 @@
 "use client";
 
-import { FiTrendingUp } from "react-icons/fi";
-
 interface MarketOverviewProps {
-  locations: string;
+  /** Formatted total of visible locations across layers, e.g. "3,842". */
+  totalLabel: string;
+  /** Number of distinct districts/towns visible. */
+  districts: number;
+  /** Number of active (added) layers. */
+  activeLayers: number;
   className?: string;
 }
 
 function Stat({
   label,
   value,
-  up,
 }: {
   label: string;
   value: string;
-  up: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-2 text-[11px]">
       <span className="text-ink-500">{label}</span>
       <span className="flex items-center gap-1 font-semibold tabular-nums text-ink-900">
-        <FiTrendingUp
-          className={`h-3 w-3 ${up ? "text-brand-600" : "text-ink-400 -scale-y-100"}`}
-        />
         {value}
       </span>
     </div>
@@ -30,7 +28,9 @@ function Stat({
 }
 
 export default function MarketOverview({
-  locations,
+  totalLabel,
+  districts,
+  activeLayers,
   className = "",
 }: MarketOverviewProps) {
   return (
@@ -42,21 +42,21 @@ export default function MarketOverview({
           Market Overview
         </span>
         <span className="flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> LIVE
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" /> LIVE
         </span>
       </div>
 
       <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="text-2xl font-semibold tracking-tight text-ink-900">
-          {locations}
+        <span className="text-2xl font-semibold tracking-tight tabular-nums text-ink-900">
+          {totalLabel}
         </span>
         <span className="text-[11px] font-medium text-ink-500">locations</span>
       </div>
 
       <div className="mt-3 space-y-1.5 border-t border-line pt-2.5">
-        <Stat label="Locations" value="+12.4%" up />
-        <Stat label="Growth" value="+8.7%" up />
-        <Stat label="Districts covered" value="74" up />
+        <Stat label="Growth" value="+12.4%" />
+        <Stat label="Districts covered" value={String(districts)} />
+        <Stat label="Active layers" value={String(activeLayers)} />
       </div>
     </div>
   );

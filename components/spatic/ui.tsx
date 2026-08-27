@@ -74,13 +74,19 @@ export function SliderRow({
   suffix,
   min = 0,
   max = 100,
+  step = 1,
+  format,
   onChange,
 }: {
   label: string;
   value: number;
-  suffix: string;
+  /** Legacy suffix appended to the raw value. Ignored when `format` is given. */
+  suffix?: string;
   min?: number;
   max?: number;
+  step?: number;
+  /** Optional custom formatter for the value badge. */
+  format?: (v: number) => string;
   onChange: (v: number) => void;
 }) {
   return (
@@ -88,14 +94,14 @@ export function SliderRow({
       <div className="mb-1.5 flex items-center justify-between">
         <span className="text-[11px] font-medium text-ink-500">{label}</span>
         <span className="rounded-md bg-brand-50 px-1.5 py-0.5 text-[11px] font-semibold text-brand-800">
-          {value}
-          {suffix}
+          {format ? format(value) : `${value}${suffix ?? ""}`}
         </span>
       </div>
       <input
         type="range"
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full cursor-pointer"
@@ -142,10 +148,16 @@ export function SwatchPicker({
 export function Section({
   title,
   defaultOpen = true,
+  badge,
+  action,
   children,
 }: {
   title: string;
   defaultOpen?: boolean;
+  /** Small pill rendered next to the title (e.g. "3 active"). */
+  badge?: React.ReactNode;
+  /** Action button rendered on the right, before the chevron. */
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -157,14 +169,28 @@ export function Section({
         aria-expanded={open}
         className="focusable flex w-full items-center justify-between px-4 py-3 text-left"
       >
-        <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">
-          {title}
+        <span className="flex items-center gap-2">
+          <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">
+            {title}
+          </span>
+          {badge}
         </span>
-        <FiChevronDown
-          className={`h-3.5 w-3.5 text-ink-400 transition-transform duration-200 ${
-            open ? "" : "-rotate-90"
-          }`}
-        />
+        <span className="flex items-center gap-1.5">
+          {action && (
+            <span
+              role="none"
+              onClick={(e) => e.stopPropagation()}
+              onKeyDown={(e) => e.stopPropagation()}
+            >
+              {action}
+            </span>
+          )}
+          <FiChevronDown
+            className={`h-3.5 w-3.5 text-ink-400 transition-transform duration-200 ${
+              open ? "" : "-rotate-90"
+            }`}
+          />
+        </span>
       </button>
       <div
         className={`grid transition-all duration-200 ${

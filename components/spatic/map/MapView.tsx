@@ -4,9 +4,12 @@
 import { useMemo } from "react";
 import DeckGL from "@deck.gl/react";
 import { ScatterplotLayer } from "@deck.gl/layers";
+import { HeatmapLayer, HexagonLayer } from "@deck.gl/aggregation-layers";
 import Map from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
-import type { BusinessPoint } from "../../spatic/data";
+import type { ComputedLayer, LocationData } from "../data";
+
+type Position = [number, number, number];
 
 export interface ViewState {
   longitude: number;
@@ -16,17 +19,17 @@ export interface ViewState {
   bearing: number;
 }
 
+export interface SelectedRef {
+  layerId: string;
+  locId: string;
+}
+
 interface MapViewProps {
-  data: BusinessPoint[];
-  selected: BusinessPoint | null;
+  layers: ComputedLayer[];
+  selected: SelectedRef | null;
   viewState: ViewState;
   onViewState: (vs: ViewState) => void;
-  onSelect: (b: BusinessPoint) => void;
-  fillColor: string;
-  borderColor: string;
-  opacity: number;
-  radius: number;
-  borderWidth: number;
+  onSelect: (layerId: string, loc: LocationData) => void;
   mapStyle: string;
 }
 
@@ -39,103 +42,178 @@ function hexToRgb(hex: string): [number, number, number] {
   ];
 }
 
+/** Escape a string for safe injection into the tooltip HTML. */
+function esc(s: unknown): string {
+  const el = document.createElement("div");
+  el.textContent = String(s ?? "");
+  return el.innerHTML;
+}
+
+const getPosition = (d: LocationData): Position => [d.lng, d.lat, 0];
+
 export default function MapView({
-  data,
+  layers,
   selected,
   viewState,
   onViewState,
   onSelect,
-  fillColor,
-  borderColor,
-  opacity,
-  radius,
-  borderWidth,
   mapStyle,
 }: MapViewProps) {
-  const { fillRgb, borderRgb } = useMemo(
-    () => ({
-      fillRgb: hexToRgb(fillColor),
-      borderRgb: hexToRgb(borderColor),
-    }),
-    [fillColor, borderColor],
-  );
+  const deckLayers = useMemo(() => {
+    const out: any[] = [];
+    for (const l of layers) {
+      if (!l.visible || !l.dataLoaded || l.loading) continue;
+      const data = l.filteredData;
+      if (data.length === 0) continue;
+      const rgb = hexToRgb(l.appearance.color);
+      const op = l.appearance.opacity / 100;
+      const r = l.appearance.radius;
+      const bw = Math.max(1, l.appearance.lineWidth);
+      const selectedId = selected?.layerId === l.id ? selected.locId : null;
 
-  const layers = useMemo(() => {
-    const selectedId = selected?.id;
+      if (l.visualizationType === "heatmap") {
+        out.push(
+          new HeatmapLayer({
+            id: `${l.id}-heat`,
+            data,
+            pickable: false,
+            opacity: op * 0.9,
+            getPosition,
+            getWeight: (d: LocationData) => 1 + (d.number_of_votes || 0) / 600,
+            radiusPixels: 22 + r * 1.5,
+            threshold: 0.04,
+          }),
+        );
+        out.push(
+          new ScatterplotLayer({
+            id: `${l.id}-heat-core`,
+            data,
+            pickable: true,
+            stroked: true,
+            filled: true,
+            opacity: Math.min(op, 0.9),
+            radiusMinPixels: 2.5,
+            radiusMaxPixels: 30,
+            getRadius: (d: LocationData) => (d.id === selectedId ? r * 1.6 : r * 0.55),
+            lineWidthMinPixels: bw,
+            getFillColor: () => [255, 255, 255, 230],
+            getLineColor: () => rgb,
+            getPosition,
+            onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
+          }),
+        );
+        continue;
+      }
 
-    return [
-      // Soft halo under the markers
-      new ScatterplotLayer({
-        id: "spatic-halo",
-        data,
-        pickable: false,
-        stroked: false,
-        filled: true,
-        opacity: opacity / 100,
-        radiusMinPixels: radius * 2.1,
-        radiusMaxPixels: 120,
-        getRadius: () => radius * 1.3,
-        getFillColor: () => [...fillRgb, 26],
-        getPosition: (d: BusinessPoint) => [d.lng, d.lat, 0],
-      }),
-      // Core markers (white center, colored ring, glow)
-      new ScatterplotLayer({
-        id: "spatic-core",
-        data,
-        pickable: true,
-        stroked: true,
-        filled: true,
-        opacity: opacity / 100,
-        radiusMinPixels: 4,
-        radiusMaxPixels: 60,
-        getRadius: (d: BusinessPoint) =>
-          d.id === selectedId ? radius * 1.5 : radius,
-        lineWidthMinPixels: Math.max(1, borderWidth),
-        getFillColor: () => [255, 255, 255, 222],
-        getLineColor: () =>
-          selectedId ? fillRgb : borderRgb,
-        getPosition: (d: BusinessPoint) => [d.lng, d.lat, 0],
-        onClick: (info: any) => {
-          if (info.object) onSelect(info.object as BusinessPoint);
-        },
-      }),
-    ];
-  }, [
-    data,
-    selected,
-    fillRgb,
-    borderRgb,
-    radius,
-    borderWidth,
-    opacity,
-    onSelect,
-  ]);
+      if (l.visualizationType === "hexagon") {
+        out.push(
+          new HexagonLayer({
+            id: `${l.id}-hex`,
+            data,
+            pickable: true,
+            extruded: true,
+            opacity: op * 0.8,
+            radius: 650,
+            elevationScale: 6 + r / 3,
+            getPosition,
+            getColor: () => [...rgb, 220],
+            getElevationValue: (pts: LocationData[]) => pts.length,
+            onClick: (info: any) =>
+              info.object?.points?.[0] && onSelect(l.id, info.object.points[0]),
+          }),
+        );
+        continue;
+      }
+
+      // point | cluster | density | bubble → halo + core markers
+      if (l.visualizationType !== "density") {
+        out.push(
+          new ScatterplotLayer({
+            id: `${l.id}-halo`,
+            data,
+            pickable: false,
+            stroked: false,
+            filled: true,
+            opacity: op,
+            radiusMinPixels: r * 1.9,
+            radiusMaxPixels: 110,
+            getRadius: () => r * 1.25,
+            getFillColor: () => [...rgb, 28],
+            getPosition,
+          }),
+        );
+      }
+
+      out.push(
+        new ScatterplotLayer({
+          id: `${l.id}-core`,
+          data,
+          pickable: true,
+          stroked: l.visualizationType !== "density",
+          filled: l.visualizationType !== "bubble",
+          opacity: l.visualizationType === "density" ? op * 0.75 : op,
+          radiusMinPixels: 3,
+          radiusMaxPixels: 60,
+          getRadius: (d: LocationData) => {
+            if (l.visualizationType === "cluster") {
+              // fake-aggregate look: slightly larger dots
+              return d.id === selectedId ? r * 1.6 : r * 0.85 + 2;
+            }
+            if (l.visualizationType === "bubble") {
+              const base = (d.number_of_votes || 0) > 400 ? r * 1.7 : (d.number_of_votes || 0) > 100 ? r * 1.15 : r * 0.7;
+              return d.id === selectedId ? base * 1.35 : base;
+            }
+            return d.id === selectedId ? r * 1.5 : r;
+          },
+          lineWidthMinPixels: bw,
+          getFillColor: () =>
+            l.visualizationType === "density"
+              ? [...rgb, 120]
+              : [255, 255, 255, 225],
+          getLineColor: () => rgb,
+          getPosition,
+          onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
+        }),
+      );
+    }
+    return out;
+  }, [layers, selected, onSelect]);
 
   return (
     <div className="absolute inset-0">
-      {/* Map guides / scale decor (non-interfering) */}
-      <div className="pointer-events-none absolute left-4 bottom-12 z-10 flex items-center gap-1.5 rounded-lg bg-white/80 px-2.5 py-1.5 text-[10px] font-medium text-ink-500 shadow-sm backdrop-blur">
-        <span className="inline-block h-px w-10 bg-ink-500" />
-        <span>2 km</span>
-      </div>
-
       <DeckGL
         viewState={viewState}
         onViewStateChange={({ viewState: vs }: any) => onViewState(vs)}
         controller={true}
-        layers={layers}
-        getTooltip={({ object }: { object?: BusinessPoint }) => {
+        layers={deckLayers}
+        getTooltip={({
+          object,
+          layer,
+        }: {
+          object?: LocationData | any;
+          layer?: any;
+        }) => {
           if (!object) return null;
+          const d = (object.points ? object.points[0] : object) as LocationData;
+          const layerName = layer?.id?.replace(/-(core|halo|heat|hex)$/, "");
+          const label =
+            layers.find((l) => l.id === layerName)?.label ?? d.category ?? "";
+          const subs = String(d.sub_categories || "").replace(/[\[\]"]/g, "");
           return {
             html: `<div style="font-family:inherit;min-width:190px;padding:2px">
-                <div style="font-size:9px;letter-spacing:.08em;font-weight:600;color:#8a5cf6;text-transform:uppercase;margin-bottom:3px">
-                  ${object.categoryLabel} &middot; ${object.district}
+                <div style="font-size:9px;letter-spacing:.08em;font-weight:600;color:#7C4DFF;text-transform:uppercase;margin-bottom:3px">
+                  ${esc(label)}${subs && subs !== "N_A" ? ` &middot; ${esc(subs.split(",")[0])}` : ""}
                 </div>
-                <div style="font-size:13px;font-weight:600;color:#171717;margin-bottom:6px">${object.name}</div>
+                <div style="font-size:13px;font-weight:600;color:#171717;margin-bottom:6px">${esc(d.name)}</div>
+                <div style="font-size:11px;color:#8a8f98;margin-bottom:6px">${esc(d.town_name)}</div>
                 <table style="font-size:11px;color:#343434;border-collapse:collapse;width:100%">
-                  <tr><td style="color:#8a8f98;padding:1px 0">Revenue</td><td style="text-align:right;font-weight:600">₹${object.revenue}M</td></tr>
-                  <tr><td style="color:#8a8f98;padding:1px 0">Employees</td><td style="text-align:right;font-weight:600">${object.employees}</td></tr>
-                  <tr><td style="color:#8a8f98;padding:1px 0">Open since</td><td style="text-align:right;font-weight:600">${object.established}</td></tr>
+                  ${d.brand_name && d.brand_name !== "N_A" ? `<tr><td style="color:#8a8f98;padding:1px 0">Brand</td><td style="text-align:right;font-weight:600">${esc(d.brand_name)}</td></tr>` : ""}
+                  ${
+                    d.cost_for_two > 0
+                      ? `<tr><td style="color:#8a8f98;padding:1px 0">Cost for two</td><td style="text-align:right;font-weight:600">₹${d.cost_for_two}</td></tr>`
+                      : ""
+                  }
+                  <tr><td style="color:#8a8f98;padding:1px 0">Votes</td><td style="text-align:right;font-weight:600">${d.number_of_votes ?? 0}</td></tr>
                 </table>
               </div>`,
             style: {
@@ -160,3 +238,4 @@ export default function MapView({
     </div>
   );
 }
+

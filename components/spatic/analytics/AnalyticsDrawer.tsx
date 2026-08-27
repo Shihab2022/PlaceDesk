@@ -2,39 +2,38 @@
 
 import { FiChevronUp } from "react-icons/fi";
 
+export interface DrawerSlice {
+  label: string;
+  value: number;
+  color: string;
+}
+
 interface AnalyticsDrawerProps {
   expanded: boolean;
   onToggle: () => void;
-  locations: string;
+  /** Total visible locations label e.g. "3,842" */
+  totalLabel: string;
+  /** One slice per visible layer. */
+  byLayer: DrawerSlice[];
+  /** Top districts across visible layers. */
+  topDistricts: { name: string; pct: number }[];
   delta: string;
+  districtsCovered: number;
 }
-
-const CATEGORY_CHART = [
-  { label: "Electronics", value: 640, color: "#7C4DFF" },
-  { label: "Food & Bev", value: 540, color: "#8B5CF6" },
-  { label: "Fashion", value: 470, color: "#A78BFA" },
-  { label: "Education", value: 360, color: "#C4B5FD" },
-  { label: "Healthcare", value: 330, color: "#DDD6FE" },
-];
 
 const GROWTH = [2, 3, 3, 5, 6, 8, 9, 12, 11, 13, 15, 18, 17, 20, 23];
 
-const DISTRICT_CHART = [
-  { name: "Indiranagar", pct: 18 },
-  { name: "Koramangala", pct: 15 },
-  { name: "Whitefield", pct: 13 },
-];
 
-function MiniBar() {
-  const max = Math.max(...CATEGORY_CHART.map((c) => c.value));
+function MiniBar({ data }: { data: DrawerSlice[] }) {
+  const max = Math.max(...data.map((c) => c.value), 1);
   return (
     <div className="space-y-1.5">
-      {CATEGORY_CHART.map((c) => (
+      {data.map((c) => (
         <div key={c.label} className="flex items-center gap-2">
           <span className="w-20 truncate text-[10px] text-ink-500">{c.label}</span>
           <div className="h-2 flex-1 overflow-hidden rounded-full bg-canvas">
             <div
-              className="h-full rounded-full transition-all"
+              className="h-full rounded-full transition-all duration-300"
               style={{ width: `${(c.value / max) * 100}%`, background: c.color }}
             />
           </div>
@@ -43,6 +42,9 @@ function MiniBar() {
           </span>
         </div>
       ))}
+      {data.length === 0 && (
+        <p className="py-3 text-center text-[10px] text-ink-300">No visible layers</p>
+      )}
     </div>
   );
 }
@@ -77,8 +79,18 @@ function MiniLine() {
   );
 }
 
-function MiniDonut() {
-  const total = 46; // top-3 share
+function MiniDonut({
+  districts,
+  districtsCovered,
+}: {
+  districts: { name: string; pct: number }[];
+  districtsCovered: number;
+}) {
+  const top3 = districts.slice(0, 3);
+  const total = Math.max(
+    top3.reduce((s, d) => s + d.pct, 0),
+    1,
+  ); // top-3 share
   const radius = 26;
   const circ = 2 * Math.PI * radius;
   let acc = 0;
@@ -86,7 +98,7 @@ function MiniDonut() {
   return (
     <svg viewBox="0 0 72 72" className="h-16 w-16" aria-hidden="true">
       <circle cx="36" cy="36" r={radius} fill="none" stroke="#EEF0F5" strokeWidth="10" />
-      {DISTRICT_CHART.map((d, i) => {
+      {top3.map((d, i) => {
         const frac = d.pct / total;
         const dash = frac * circ;
         const offset = -acc * circ;
@@ -107,8 +119,9 @@ function MiniDonut() {
         );
       })}
       <text x="36" y="40" textAnchor="middle" fontSize="12" fontWeight="700" fill="#171717">
-        46
+        {Math.round(total)}
       </text>
+      <title>{`${Math.round(total)}% — top districts of ${districtsCovered}`}</title>
     </svg>
   );
 }
@@ -116,8 +129,11 @@ function MiniDonut() {
 export default function AnalyticsDrawer({
   expanded,
   onToggle,
-  locations,
+  totalLabel,
+  byLayer,
+  topDistricts,
   delta,
+  districtsCovered,
 }: AnalyticsDrawerProps) {
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-3">
@@ -132,7 +148,7 @@ export default function AnalyticsDrawer({
           <div className="flex items-center gap-2.5">
             <span className="text-[12px] font-semibold text-ink-900">Market Insights</span>
             <span className="hidden items-center gap-1 text-[11px] text-ink-400 sm:flex">
-              <span className="font-semibold tabular-nums text-ink-900">{locations}</span>
+              <span className="font-semibold tabular-nums text-ink-900">{totalLabel}</span>
               locations
             </span>
           </div>
@@ -158,9 +174,9 @@ export default function AnalyticsDrawer({
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <div>
                 <div className="mb-2 text-[11px] font-medium text-ink-500">
-                  Locations by category
+                  Locations by layer
                 </div>
-                <MiniBar />
+                <MiniBar data={byLayer} />
               </div>
               <div>
                 <div className="mb-2 text-[11px] font-medium text-ink-500">
@@ -177,12 +193,18 @@ export default function AnalyticsDrawer({
                   Market concentration
                 </div>
                 <div className="flex items-center gap-3">
-                  <MiniDonut />
-                  <div className="space-y-1">
-                    <div className="text-[12px] font-semibold tabular-nums text-ink-900">
-                      Top 3 districts
-                    </div>
-                    <div className="text-[10px] text-ink-400">of 74 covered</div>
+                  <MiniDonut districts={topDistricts} districtsCovered={districtsCovered} />
+                  <div className="space-y-1 min-w-0">
+                    {topDistricts.slice(0, 3).map((d, i) => (
+                      <div key={d.name} className="flex items-center gap-1.5">
+                        <span
+                          className="h-1.5 w-1.5 shrink-0 rounded-full"
+                          style={{ background: ["#7C4DFF", "#8B5CF6", "#A78BFA"][i] }}
+                        />
+                        <span className="truncate text-[10px] text-ink-500">{d.name}</span>
+                      </div>
+                    ))}
+                    <div className="text-[10px] text-ink-400">of {districtsCovered} covered</div>
                   </div>
                 </div>
               </div>
