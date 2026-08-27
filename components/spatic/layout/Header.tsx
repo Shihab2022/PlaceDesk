@@ -34,16 +34,6 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
 
       <div className="mx-1 hidden h-6 w-px bg-line sm:block" />
 
-      {/* Workspace selector */}
-      <button
-        type="button"
-        className="focusable flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-sm font-medium text-ink-900 transition-colors hover:bg-canvas"
-        aria-haspopup="true"
-      >
-        <span className="hidden md:inline">Bengaluru Retail</span>
-        <FiChevronDown className="h-3.5 w-3.5 text-ink-400" />
-      </button>
-
       {/* Search (opens command palette) */}
       <button
         type="button"
@@ -94,7 +84,7 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-600 ring-2 ring-white" />
         </button>
 
-        <div className="mx-1 hidden h-6 w-px bg-line sm:block" />
+      <div className="mx-1 hidden h-6 w-px bg-line sm:block" />
 
         {/* User / avatar */}
         <div className="relative">

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   FiLayers,
   FiFilter,
@@ -10,6 +11,7 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import { IconTip } from "../../spatic/ui";
+import { MAP_THEMES } from "../data";
 
 interface MapControlsProps {
   onZoomIn: () => void;
@@ -18,6 +20,8 @@ interface MapControlsProps {
   onFullscreen: () => void;
   onOpenFilters?: () => void;
   onOpenLayers?: () => void;
+  mapThemeId?: string;
+  onMapThemeChange?: (id: string) => void;
 }
 
 function Btn({
@@ -50,7 +54,10 @@ export default function MapControls({
   onFullscreen,
   onOpenFilters,
   onOpenLayers,
+  mapThemeId,
+  onMapThemeChange,
 }: MapControlsProps) {
+  const [styleOpen, setStyleOpen] = useState(false);
   return (
     <div className="pointer-events-none absolute right-3 top-3 z-20 flex flex-col items-center gap-2.5">
       {/* toolbar */}
@@ -58,9 +65,36 @@ export default function MapControls({
         <Btn label="Layers" onClick={() => onOpenLayers?.()}>
           <FiLayers className="h-4 w-4" />
         </Btn>
-        <Btn label="Map style" onClick={() => {}}>
-          <FiMoon className="h-4 w-4" />
-        </Btn>
+        <div className="relative">
+          <Btn label="Map style" onClick={() => setStyleOpen((value) => !value)}>
+            <FiMoon className="h-4 w-4" />
+          </Btn>
+          {styleOpen && (
+            <div className="absolute right-full top-0 mr-2 w-44 rounded-xl border border-line bg-white p-2 shadow-xl">
+              <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-ink-400">
+                Map Style
+              </div>
+              {MAP_THEMES.map((theme) => (
+                <button
+                  key={theme.id}
+                  type="button"
+                  onClick={() => {
+                    onMapThemeChange?.(theme.id);
+                    setStyleOpen(false);
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[12px] ${
+                    mapThemeId === theme.id
+                      ? "bg-brand-50 font-semibold text-brand-800"
+                      : "text-ink-700 hover:bg-canvas"
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${mapThemeId === theme.id ? "bg-brand-600" : "bg-line"}`} />
+                  {theme.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <Btn label="Filters" onClick={() => onOpenFilters?.()}>
           <FiFilter className="h-4 w-4" />
         </Btn>

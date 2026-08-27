@@ -1,20 +1,27 @@
-import type { CategoryConfig, CityDef, LocationData } from "../data";
+﻿import type { CategoryConfig, CityDef, LocationData } from "../data";
+import { isBangladeshDivisionCity } from "../data/bd/divisions";
 
 /**
  * Load a city's dataset for a category.
  *
- * - For cities backed by the real API (Delhi) it preserves the existing
- *   `/api/pois?path=<targetPath>` behaviour.
- * - For other cities it returns schema-identical generated data.
+ * Resolution order:
+ *  1. Bangladesh divisions (bd-*) -> deterministic generator
+ *  2. Delhi -> real /api/pois GitHub backend
+ *  3. Other cities -> schema-identical deterministic mock generator
  */
 export async function loadLayerData(
   city: CityDef,
   category: CategoryConfig,
 ): Promise<LocationData[]> {
+  if (isBangladeshDivisionCity(city.id)) {
+    const { generateBangladeshLocations } = await import("../data/bd/divisions");
+    return generateBangladeshLocations(city.id, category.key);
+  }
+
   if (city.useApi && category.targetPath) {
     return fetchRealDataset(category.targetPath);
   }
-  // Lazy-load mock generator to keep main bundle smaller.
+
   const { generateMockLocations } = await import("../data/mockGenerator");
   return generateMockLocations(city, category);
 }

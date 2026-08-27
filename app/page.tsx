@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   FiBarChart2,
@@ -14,14 +14,18 @@ import LayerPanel from "@/components/spatic/layers/LayerPanel";
 import MapControls from "@/components/spatic/map/MapControls";
 import MapLegend from "@/components/spatic/map/MapLegend";
 import type { ViewState } from "@/components/spatic/map/MapView";
-import MarketOverview from "@/components/spatic/analytics/MarketOverview";
 import AnalyticsDrawer, { DrawerSlice } from "@/components/spatic/analytics/AnalyticsDrawer";
 import LocationDetails from "@/components/spatic/modals/LocationDetails";
+import StreetViewModal from "@/components/spatic/modals/StreetViewModal";
+import WorkspaceSection from "@/components/spatic/layout/WorkspaceSection";
 import GlobalSearch from "@/components/spatic/search/GlobalSearch";
 import AddDatasetModal from "@/components/spatic/modals/AddDatasetModal";
-import { useMapLayers } from "@/components/spatic/hooks/useMapLayers";
-import { CITIES, CATEGORIES, DEFAULT_CITY, MAP_THEMES } from "@/components/spatic/data";
-import type { CategoryKey, CityDef, ComputedLayer } from "@/components/spatic/data";
+import {
+  AppStoreProvider,
+  useAppStore,
+} from "@/components/spatic/app/AppStoreContext";
+import { CITIES, MAP_THEMES } from "@/components/spatic/data";
+import type { CityDef } from "@/components/spatic/data";
 
 const DynamicMap = dynamic(() => import("@/components/spatic/map/MapView"), {
   ssr: false,
@@ -40,6 +44,14 @@ function MapSkeleton() {
 }
 
 export default function HomePage() {
+  return (
+    <AppStoreProvider>
+      <Workspace />
+    </AppStoreProvider>
+  );
+}
+
+function Workspace() {
   /* ---- UI chrome ---- */
   const [navActive, setNavActive] = useState("maps");
   const [collapsed, setCollapsed] = useState(false);
@@ -50,45 +62,32 @@ export default function HomePage() {
   const [saved, setSaved] = useState(false);
 
   /* ---- City + multi-layer architecture ---- */
-  const [cityId, setCityId] = useState<string>(DEFAULT_CITY.id);
+  const store = useAppStore();
   const city: CityDef = useMemo(
-    () => CITIES.find((c) => c.id === cityId) ?? DEFAULT_CITY,
-    [cityId],
+    () => CITIES.find((c) => c.id === store.cityId) ?? CITIES[0],
+    [store.cityId],
   );
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [selected, setSelected] = useState<{ layerId: string; locId: string } | null>(
-    null,
-  );
-
-  const [viewState, setViewState] = useState<ViewState>({
-    longitude: DEFAULT_CITY.center.lng,
-    latitude: DEFAULT_CITY.center.lat,
-    zoom: DEFAULT_CITY.zoom,
-    pitch: 0,
-    bearing: 0,
-  });
-
-  const layersApi = useMapLayers(city);
-  const { layers, activeKeys } = layersApi;
+  const { layers, activeId, viewState } = store;
 
   /* Keep a valid layer selected */
   useEffect(() => {
     if (!layers.some((l) => l.id === activeId)) {
-      setActiveId(layers[0]?.id ?? null);
+      store.setActiveId(layers[0]?.id ?? null);
     }
-  }, [layers, activeId]);
+
+  }, [layers, activeId, store.setActiveId]);
 
   /* Recenter the map when the city changes */
   useEffect(() => {
-    setSelected(null);
-    setViewState({
+    store.setSelectedLocation(null);
+    store.setViewState({
       longitude: city.center.lng,
       latitude: city.center.lat,
       zoom: city.zoom,
       pitch: 0,
       bearing: 0,
     });
-  }, [city]);
+  }, [city, store.setSelectedLocation, store.setViewState]);
 
   /* ⌘K global shortcut */
   useEffect(() => {
@@ -97,6 +96,7 @@ export default function HomePage() {
         e.preventDefault();
         setSearchOpen((v) => !v);
       }
+
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -151,97 +151,44 @@ export default function HomePage() {
     [districtCounts, totalVisible],
   );
 
-const addableKeys = useMemo<Set<CategoryKey>>(() => {
-    const s = new Set<CategoryKey>(CATEGORIES.map((c) => c.key));
-    for (const l of layers) s.delete(l.categoryKey);
-    return s;
-  }, [layers]);
-
   /* ---- Handlers ---- */
-  const [themeId, setThemeId] = useState<string>("light");
   const theme = useMemo(
-    () => MAP_THEMES.find((t) => t.id === themeId) ?? MAP_THEMES[0],
-    [themeId],
+    () => MAP_THEMES.find((t) => t.id === store.mapThemeId) ?? MAP_THEMES[0],
+    [store.mapThemeId],
   );
 
   const mapStyle = theme.style;
 
   const zoomBy = useCallback((dir: number) => {
-    setViewState((v) => ({
-      ...v,
-      zoom: Math.min(16, Math.max(3, v.zoom + dir * 1)),
-    }));
-  }, []);
+    store.setViewState({
+      ...store.viewState,
+      zoom: Math.min(16, Math.max(3, store.viewState.zoom + dir)),
+    });
+  }, [store.setViewState, store.viewState]);
 
   const locateMe = useCallback(() => {
-    setViewState((prev) => ({
-      ...prev,
+    store.setViewState({
+      ...store.viewState,
       longitude: city.center.lng,
       latitude: city.center.lat,
-      zoom: Math.max(prev.zoom, city.zoom + 2),
+      zoom: Math.max(store.viewState.zoom, city.zoom + 2),
       pitch: 0,
       bearing: 0,
-    }));
-  }, [city]);
+    });
+  }, [city, store.setViewState, store.viewState]);
 
   const fullscreen = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen().catch(() => {});
   }, []);
 
-  /* Zoom to the geographic bounds of a layer's filtered data */
-  const zoomToLayer = useCallback(
-    (id: string) => {
-      const l = layers.find((x) => x.id === id);
-      if (!l || l.filteredData.length === 0) return;
-      const lats = l.filteredData.map((d) => d.lat);
-      const lngs = l.filteredData.map((d) => d.lng);
-      const minLat = Math.min(...lats);
-      const maxLat = Math.max(...lats);
-      const minLng = Math.min(...lngs);
-      const maxLng = Math.max(...lngs);
-      const spanLat = Math.max(maxLat - minLat, 0.004);
-      const spanLng = Math.max(maxLng - minLng, 0.004);
-      const zoom = Math.min(
-        15,
-        Math.max(
-          4,
-          Math.log2(360 / Math.max(spanLng * 2.4, spanLat * 3)),
-        ),
-      );
-      setViewState({
-        longitude: (minLng + maxLng) / 2,
-        latitude: (minLat + maxLat) / 2,
-        zoom,
-        pitch: 0,
-        bearing: 0,
-      });
-      setActiveId(id);
-    },
-    [layers],
-  );
-
-  const handleAddLayer = useCallback(
-    (key: string) => {
-      const nid = layersApi.addLayer(key as CategoryKey);
-      setActiveId(nid);
-      if (typeof window !== "undefined" && window.innerWidth < 1024)
-        setPanelOpen(false);
-    },
-    [layersApi],
-  );
-
   /* Resolve the currently selected location record */
   const selectedLocation = useMemo(() => {
-    if (!selected) return null;
-    const l = layers.find((x) => x.id === selected.layerId);
+    if (!store.selectedLocation || !store.selectedLocationLayerId) return null;
+    const l = layers.find((x) => x.id === store.selectedLocationLayerId);
     if (!l) return null;
-    const loc =
-      l.filteredData.find((d) => d.id === selected.locId) ??
-      l.data.find((d) => d.id === selected.locId) ??
-      null;
-    return loc ? { layer: l, loc } : null;
-  }, [selected, layers]);
+    return { layer: l, loc: store.selectedLocation };
+  }, [store.selectedLocation, store.selectedLocationLayerId, layers]);
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-canvas text-ink-900">
@@ -260,10 +207,20 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
             title={`${city.label} Market Intelligence`}
             updated="8 minutes ago"
             city={city}
-            onCityChange={(c) => setCityId(c.id)}
+            onCityChange={(c) => store.setCityId(c.id)}
             onSave={() => setSaved(true)}
             saved={saved}
           />
+          {navActive !== "maps" && (
+            <WorkspaceSection section={navActive} city={city} onNavigate={setNavActive} />
+          )}
+          {navActive !== "maps" && (
+            <WorkspaceSection
+              section={navActive}
+              city={city}
+              onNavigate={setNavActive}
+            />
+          )}
 
           <div className="relative flex min-h-0 flex-1 overflow-hidden">
             {/* Mobile backdrop for the left panel */}
@@ -283,21 +240,6 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
               }`}
             >
               <LayerList
-                layers={layers}
-                activeKeys={activeKeys}
-                activeId={activeId}
-                addableKeys={addableKeys}
-                cityLabel={city.label}
-                onSelect={(id) => setActiveId(id)}
-                onAdd={handleAddLayer}
-                onDuplicate={(id) => {
-                  const nid = layersApi.duplicateLayer(id);
-                  if (nid) setActiveId(nid);
-                }}
-                onRemove={layersApi.removeLayer}
-                onToggleVisible={layersApi.toggleVisible}
-                onZoom={zoomToLayer}
-                onClearFilters={layersApi.clearFilters}
               />
 
               {/* Active layer configuration */}
@@ -306,17 +248,6 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
                   <LayerPanel
                     layer={activeLayer}
                     cityLabel={city.label}
-                    onUpdate={layersApi.updateLayer}
-                    onSetFilters={layersApi.setFilters}
-                    onClearFilters={layersApi.clearFilters}
-                    onDuplicate={(id) => {
-                      const nid = layersApi.duplicateLayer(id);
-                      if (nid) setActiveId(nid);
-                    }}
-                    onToggleVisible={layersApi.toggleVisible}
-                    onZoom={zoomToLayer}
-                    onRemove={layersApi.removeLayer}
-                    onRetry={layersApi.reloadLayer}
                   />
                 </div>
               ) : (
@@ -331,27 +262,19 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
               <div className="absolute inset-0">
                 <DynamicMap
                   layers={layers}
-                  selected={selected}
-                  viewState={viewState}
-                  onViewState={setViewState}
+                  selected={store.selectedLocation && store.selectedLocationLayerId ? { layerId: store.selectedLocationLayerId, locId: store.selectedLocation.id } : null}
+                  viewState={viewState as ViewState}
+                  onViewState={store.setViewState}
                   onSelect={(layerId, loc) =>
-                    setSelected({ layerId, locId: loc.id })
+                    store.setSelectedLocation(loc, layerId)
                   }
                   mapStyle={mapStyle}
                 />
               </div>
 
-              {/* Map intelligence overlay */}
-              <MarketOverview
-                totalLabel={totalVisible.toLocaleString("en-US")}
-                districts={districtCounts.length}
-                activeLayers={layers.length}
-                className="absolute left-3 top-3 z-10 max-lg:hidden"
-              />
-
-              {/* Floating controls (right) */}
+                            {/* Floating controls (right) */}
               <div className="pointer-events-none absolute inset-y-2 right-2 z-20 flex flex-col items-end gap-2.5">
-                <MapLegend layers={layers} onSelect={(id) => setActiveId(id)} />
+                <MapLegend layers={layers} onSelect={(id) => store.setActiveId(id)} />
 
                 <div className="pointer-events-auto mt-auto flex flex-col items-end gap-2.5">
                   <MapControls
@@ -362,8 +285,10 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
                     onOpenLayers={() => setPanelOpen(true)}
                     onOpenFilters={() => {
                       setPanelOpen(true);
-                      if (activeLayer) setActiveId(activeLayer.id);
+                      if (activeLayer) store.setActiveId(activeLayer.id);
                     }}
+                    mapThemeId={store.mapThemeId}
+                    onMapThemeChange={(id) => store.setMapThemeId(id as typeof store.mapThemeId)}
                   />
 
                   {/* Mobile: toggle left panel */}
@@ -399,7 +324,7 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
                   location={selectedLocation.loc}
                   layerLabel={selectedLocation.layer.label}
                   accent={selectedLocation.layer.appearance.color}
-                  onClose={() => setSelected(null)}
+                  onClose={() => store.setSelectedLocation(null)}
                 />
               )}
 
@@ -424,8 +349,7 @@ const addableKeys = useMemo<Set<CategoryKey>>(() => {
         open={addDatasetOpen}
         onClose={() => setAddDatasetOpen(false)}
       />
+      <StreetViewModal />
     </div>
   );
 }
-
-

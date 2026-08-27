@@ -1,10 +1,11 @@
 import type { ComponentType } from "react";
+import type { VisualizationSettings } from "../app/VisualizationSettings";
 
 /* ================================================================ */
 /* Core types for the multi-layer Spatic workspace                  */
 /* ================================================================ */
 
-/** A single location/business record — mirrors the Delhi dataset schema. */
+/** A single location/business record â€” mirrors the Delhi dataset schema. */
 export interface LocationData {
   id: string;
   name: string;
@@ -61,11 +62,15 @@ export interface CityDef {
   pincode: string; // prefix, e.g. "1100"
   pincodeLength: number; // total digits
   roads: string[];
+  /** For countries with divisions/provinces (e.g. Bangladesh). */
+  division?: string;
 }
 
 /* Layer presentation */
 
 export type VisualizationType =
+  | "scatter"
+  | "icon"
   | "point"
   | "cluster"
   | "density"
@@ -128,6 +133,7 @@ export interface LayerState {
   visualizationType: VisualizationType;
   appearance: Appearance;
   filters: Record<string, FilterValue>;
+  vizSettings?: VisualizationSettings;
 }
 
 /* ================================================================ */
@@ -157,7 +163,7 @@ export function parseTextArray(s?: string): string[] {
     .filter(Boolean);
 }
 
-/** Deterministic pseudo rating (3.0–5.0) derived from stable fields. */
+/** Deterministic pseudo rating (3.0â€“5.0) derived from stable fields. */
 export function getRating(loc: LocationData): number {
   let h = 0;
   const str = String(loc.id || loc.name);

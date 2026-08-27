@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useId } from "react";
 import {
@@ -12,16 +12,22 @@ import {
 import {
   CATEGORIES,
   CATEGORY_FILTERS,
-  VISUALIZATION_TYPES,
   countActiveFilters,
   formatCount,
 } from "../data";
 import type { Appearance, ComputedLayer, FilterValue } from "../data";
 import { FilterSet } from "../filters/FilterControls";
 import { Section, SliderRow, SwatchPicker } from "../ui";
+import {
+  DEFAULT_VIZ_SETTINGS,
+  VISUALIZATIONS,
+  VISUALIZATION_LABELS,
+} from "../app/VisualizationSettings";
+import type { VisualizationId } from "../app/VisualizationSettings";
+import { useAppStore } from "../app/AppStoreContext";
 
 const VIZ_LABEL: Record<string, string> = {
-  point: "Point",
+  point: "Scatter",
   cluster: "Cluster",
   density: "Density",
   heatmap: "Heatmap",
@@ -29,18 +35,43 @@ const VIZ_LABEL: Record<string, string> = {
   bubble: "Bubble",
 };
 
-function VizMini({ type, color }: { type: string; color: string }) {
+/** Map internal viz ids to deck.gl-style labels for the legacy viz switcher. */
+function legacyVizFromVisualization(v: VisualizationId): ComputedLayer["visualizationType"] {
+  switch (v) {
+    case "scatter":
+      return "point";
+    case "cluster":
+      return "cluster";
+    case "density":
+      return "density";
+    case "heatmap":
+      return "heatmap";
+    case "hexagon":
+      return "hexagon";
+    case "icon":
+      return "bubble";
+  }
+}
+
+function VizMini({ type, color }: { type: VisualizationId; color: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
   const c = color;
   const gradId = `hm-${uid}`;
   return (
     <svg viewBox="0 0 44 30" className="h-8 w-11" aria-hidden="true">
-      {type === "point" && (
+      {type === "scatter" && (
         <g>
           <circle cx="14" cy="15" r="5" fill={c} opacity="0.22" />
           <circle cx="14" cy="15" r="2.6" fill="#fff" stroke={c} strokeWidth="1.6" />
           <circle cx="28" cy="12" r="2.2" fill="#fff" stroke={c} strokeWidth="1.5" opacity="0.7" />
           <circle cx="31" cy="21" r="2" fill="#fff" stroke={c} strokeWidth="1.4" opacity="0.5" />
+        </g>
+      )}
+      {type === "icon" && (
+        <g>
+          <text x="22" y="14" fontSize="13" fontWeight="700" fill={c} textAnchor="middle">★</text>
+          <text x="12" y="25" fontSize="9" fill={c} opacity="0.7" textAnchor="middle">●</text>
+          <text x="33" y="25" fontSize="11" fill={c} opacity="0.85" textAnchor="middle">▲</text>
         </g>
       )}
       {type === "cluster" && (
@@ -86,35 +117,8 @@ function VizMini({ type, color }: { type: string; color: string }) {
           <polygon points="25,17 29,14.5 33,14.5 37,17 33,19.5 29,19.5" opacity="0.9" />
         </g>
       )}
-      {type === "bubble" && (
-        <g stroke={c} fill="#fff">
-          <circle cx="16" cy="17" r="5.5" strokeWidth="1.6" />
-          <circle cx="29" cy="11" r="3.5" strokeWidth="1.4" opacity="0.75" />
-          <circle cx="32" cy="21" r="2.4" strokeWidth="1.3" opacity="0.55" />
-        </g>
-      )}
     </svg>
   );
-}
-
-export interface LayerPanelProps {
-  layer: ComputedLayer;
-  cityLabel: string;
-  onUpdate: (
-    id: string,
-    patch: {
-      name?: string;
-      visualizationType?: ComputedLayer["visualizationType"];
-      appearance?: Partial<Appearance>;
-    },
-  ) => void;
-  onSetFilters: (id: string, filters: Record<string, FilterValue>) => void;
-  onClearFilters: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onToggleVisible: (id: string) => void;
-  onZoom: (id: string) => void;
-  onRemove: (id: string) => void;
-  onRetry: (id: string) => void;
 }
 
 function HeaderAction({
@@ -146,35 +150,35 @@ function HeaderAction({
 export interface LayerPanelProps {
   layer: ComputedLayer;
   cityLabel: string;
-  onUpdate: (
-    id: string,
-    patch: {
-      name?: string;
-      visualizationType?: ComputedLayer["visualizationType"];
-      appearance?: Partial<Appearance>;
-    },
-  ) => void;
-  onSetFilters: (id: string, filters: Record<string, FilterValue>) => void;
-  onClearFilters: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onToggleVisible: (id: string) => void;
-  onZoom: (id: string) => void;
-  onRemove: (id: string) => void;
-  onRetry: (id: string) => void;
 }
 
-export default function LayerPanel(props: LayerPanelProps) {
-  const { layer, cityLabel } = props;
+export default function LayerPanel({ layer, cityLabel }: LayerPanelProps) {
+  const store = useAppStore();
   const id = layer.id;
   const category = CATEGORIES.find((c) => c.key === layer.categoryKey);
   const Icon = category?.icon;
   const color = layer.appearance.color;
+  const viz = (layer.visualizationType as unknown as VisualizationId) ?? "scatter";
+  const settings = layer.vizSettings ?? DEFAULT_VIZ_SETTINGS;
 
   const defs = CATEGORY_FILTERS[layer.categoryKey] ?? [];
-  const activeFilters = layer.dataLoaded ? countActiveFilters(defs, layer.filters, layer.data) : 0;
+  const activeFilters = layer.dataLoaded
+    ? countActiveFilters(defs, layer.filters, layer.data)
+    : 0;
   const shown = layer.filteredData.length;
   const total = layer.data.length;
   const districts = new Set(layer.filteredData.map((l) => l.town_name)).size;
+
+  const onUpdate = (patch: {
+    name?: string;
+    visualizationType?: ComputedLayer["visualizationType"];
+    appearance?: Partial<Appearance>;
+  }) => {
+    if (patch.name !== undefined) store.renameLayer(id, patch.name);
+    if (patch.visualizationType !== undefined)
+      store.updateVisualization(id, patch.visualizationType as unknown as VisualizationId);
+    if (patch.appearance) store.updateAppearance(id, patch.appearance);
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -196,19 +200,16 @@ export default function LayerPanel(props: LayerPanelProps) {
           </div>
           <div className="text-[11px] text-ink-400">{cityLabel}</div>
         </div>
-        <HeaderAction label="Zoom to layer" onClick={() => props.onZoom(id)}>
+        <HeaderAction label="Zoom to layer" onClick={() => store.zoomToLayer(id)}>
           <FiMaximize className="h-3.5 w-3.5" />
         </HeaderAction>
-        <HeaderAction
-          label={layer.visible ? "Hide layer" : "Show layer"}
-          onClick={() => props.onToggleVisible(id)}
-        >
+        <HeaderAction label={layer.visible ? "Hide layer" : "Show layer"} onClick={() => store.toggleVisible(id)}>
           {layer.visible ? <FiEye className="h-3.5 w-3.5" /> : <FiEyeOff className="h-3.5 w-3.5" />}
         </HeaderAction>
-        <HeaderAction label="Duplicate layer" onClick={() => props.onDuplicate(id)}>
+        <HeaderAction label="Duplicate layer" onClick={() => store.duplicateLayer(id)}>
           <FiCopy className="h-3.5 w-3.5" />
         </HeaderAction>
-        <HeaderAction label="Remove layer" danger onClick={() => props.onRemove(id)}>
+        <HeaderAction label="Remove layer" danger onClick={() => store.removeLayer(id)}>
           <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5">
             <path
               d="M3 6h18M8 6V4h8v2m-9 0l1 14h8l1-14"
@@ -221,11 +222,10 @@ export default function LayerPanel(props: LayerPanelProps) {
         </HeaderAction>
       </div>
 
-      {/* ---- Loading / error banners (scoped to this layer only) ---- */}
       {layer.loading && (
         <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl border border-line bg-canvas px-3 py-2.5">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-brand-500" />
-          <span className="text-[12px] font-medium text-ink-600">Loading dataset…</span>
+          <span className="text-[12px] font-medium text-ink-600">Loading dataset\u2026</span>
           <span className="skeleton ml-auto h-2 w-16 rounded-full" />
         </div>
       )}
@@ -240,7 +240,7 @@ export default function LayerPanel(props: LayerPanelProps) {
           </span>
           <button
             type="button"
-            onClick={() => props.onRetry(id)}
+            onClick={() => store.reloadLayer(id)}
             className="focusable flex items-center gap-1 rounded-lg border border-red-200 bg-white px-2 py-1 text-[11px] font-semibold text-red-600 transition-colors hover:bg-red-50"
           >
             <FiRefreshCw className="h-3 w-3" /> Try again
@@ -256,7 +256,7 @@ export default function LayerPanel(props: LayerPanelProps) {
               <span className="mb-1 block text-[11px] font-medium text-ink-500">Layer name</span>
               <input
                 value={layer.name}
-                onChange={(e) => props.onUpdate(id, { name: e.target.value })}
+                onChange={(e) => onUpdate({ name: e.target.value })}
                 aria-label="Layer name"
                 className="focusable w-full rounded-lg border border-line bg-white px-3 py-2 text-[13px] text-ink-900 transition-colors hover:border-brand-300 focus:border-brand-400"
               />
@@ -266,13 +266,13 @@ export default function LayerPanel(props: LayerPanelProps) {
           {/* ---- Visualization ---- */}
           <Section title="Visualization" defaultOpen>
             <div className="grid grid-cols-3 gap-2">
-              {VISUALIZATION_TYPES.map((v) => {
-                const active = layer.visualizationType === v;
+              {VISUALIZATIONS.map((v) => {
+                const active = viz === v;
                 return (
                   <button
                     key={v}
                     type="button"
-                    onClick={() => props.onUpdate(id, { visualizationType: v })}
+                    onClick={() => store.updateVisualization(id, v)}
                     aria-pressed={active}
                     className={`focusable flex flex-col items-center gap-1 rounded-xl border py-2.5 transition-all duration-150 ${
                       active
@@ -286,11 +286,286 @@ export default function LayerPanel(props: LayerPanelProps) {
                         active ? "text-brand-800" : "text-ink-500"
                       }`}
                     >
-                      {VIZ_LABEL[v]}
+                      {VISUALIZATION_LABELS[v]}
                     </span>
                   </button>
                 );
               })}
+            </div>
+
+            {/* Dynamic settings per visualization */}
+            <div className="mt-3 rounded-xl border border-line bg-canvas/60 p-3">
+              {viz === "scatter" && (
+                <div className="space-y-3">
+                  <SliderRow
+                    label="Radius"
+                    value={settings.scatter.pointSize}
+                    min={3}
+                    max={24}
+                    step={1}
+                    format={(v) => `${v} px`}
+                    onChange={(v) => store.updateVizSettings(id, { pointSize: v })}
+                  />
+                  <SliderRow
+                    label="Opacity"
+                    value={settings.scatter.opacity}
+                    min={20}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateVizSettings(id, { opacity: v })}
+                  />
+                  <SwatchPicker
+                    label="Fill Color"
+                    value={settings.scatter.fillColor}
+                    onChange={(c) => store.updateVizSettings(id, { fillColor: c })}
+                  />
+                  <SwatchPicker
+                    label="Border Color"
+                    value={settings.scatter.borderColor}
+                    onChange={(c) => store.updateVizSettings(id, { borderColor: c })}
+                  />
+                  <SliderRow
+                    label="Border Width"
+                    value={settings.scatter.borderWidth}
+                    min={0}
+                    max={6}
+                    step={1}
+                    format={(v) => (v === 0 ? "None" : `${v} px`)}
+                    onChange={(v) => store.updateVizSettings(id, { borderWidth: v })}
+                  />
+                </div>
+              )}
+
+              {viz === "icon" && (
+                <div className="space-y-3">
+                  <div>
+                    <span className="mb-1 block text-[11px] font-medium text-ink-500">Icon</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {["\u25CF", "\u2605", "\u25B2", "\u25BC", "\u25A0", "\u2660", "\u2663", "\u2665"].map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          aria-label={`Glyph ${g}`}
+                          aria-pressed={settings.icon.glyph === g}
+                          onClick={() => store.updateVizSettings(id, { glyph: g })}
+                          className={`focusable flex h-9 w-9 items-center justify-center rounded-lg border text-[16px] transition-colors ${
+                            settings.icon.glyph === g
+                              ? "border-brand-500 bg-brand-50 text-brand-800"
+                              : "border-line bg-white hover:border-brand-300"
+                          }`}
+                        >
+                          {g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <SliderRow
+                    label="Icon Size"
+                    value={settings.icon.size}
+                    min={8}
+                    max={40}
+                    step={1}
+                    format={(v) => `${v} px`}
+                    onChange={(v) => store.updateVizSettings(id, { size: v })}
+                  />
+                  <SwatchPicker
+                    label="Color"
+                    value={settings.icon.color}
+                    onChange={(c) => store.updateVizSettings(id, { color: c })}
+                  />
+                  <SliderRow
+                    label="Opacity"
+                    value={settings.icon.opacity}
+                    min={20}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateVizSettings(id, { opacity: v })}
+                  />
+                  <SliderRow
+                    label="Rotation"
+                    value={settings.icon.rotation}
+                    min={0}
+                    max={360}
+                    step={15}
+                    format={(v) => `${v}\u00B0`}
+                    onChange={(v) => store.updateVizSettings(id, { rotation: v })}
+                  />
+                </div>
+              )}
+
+              {viz === "heatmap" && (
+                <div className="space-y-3">
+                  <SliderRow
+                    label="Radius"
+                    value={settings.heatmap.radius}
+                    min={8}
+                    max={80}
+                    step={2}
+                    format={(v) => `${v} px`}
+                    onChange={(v) => store.updateVizSettings(id, { radius: v })}
+                  />
+                  <SliderRow
+                    label="Intensity"
+                    value={Math.round(settings.heatmap.intensity * 10)}
+                    min={1}
+                    max={30}
+                    step={1}
+                    format={(v) => `${(v / 10).toFixed(1)}\u00D7`}
+                    onChange={(v) => store.updateVizSettings(id, { intensity: v / 10 })}
+                  />
+                  <SliderRow
+                    label="Opacity"
+                    value={settings.heatmap.opacity}
+                    min={20}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateVizSettings(id, { opacity: v })}
+                  />
+                  <div>
+                    <span className="mb-1 block text-[11px] font-medium text-ink-500">Weight</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(["votes", "cost", "constant"] as const).map((w) => (
+                        <button
+                          key={w}
+                          type="button"
+                          aria-pressed={settings.heatmap.weight === w}
+                          onClick={() => store.updateVizSettings(id, { weight: w })}
+                          className={`focusable rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                            settings.heatmap.weight === w
+                              ? "border-brand-500 bg-brand-50 text-brand-800"
+                              : "border-line text-ink-500 hover:border-brand-300 hover:text-ink-700"
+                          }`}
+                        >
+                          {w === "votes" ? "Number of Votes" : w === "cost" ? "Cost for Two" : "Custom Weight"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="mb-1 block text-[11px] font-medium text-ink-500">Gradient</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(["purple", "viridis", "warm", "cool"] as const).map((g) => (
+                        <button
+                          key={g}
+                          type="button"
+                          aria-label={`Gradient ${g}`}
+                          aria-pressed={settings.heatmap.gradient === g}
+                          onClick={() => store.updateVizSettings(id, { gradient: g })}
+                          className={`focusable flex h-9 w-14 items-end overflow-hidden rounded-lg border-2 transition-all ${
+                            settings.heatmap.gradient === g
+                              ? "border-brand-500 ring-2 ring-brand-200"
+                              : "border-white shadow-sm hover:scale-105"
+                          }`}
+                          style={{ background: gradientFor(g) }}
+                        >
+                          <span className="block w-full bg-white/85 px-1 py-0.5 text-center text-[10px] font-semibold capitalize text-ink-900">
+                            {g}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {viz === "cluster" && (
+                <div className="space-y-3">
+                  <SliderRow
+                    label="Cluster Radius"
+                    value={settings.cluster.clusterRadius}
+                    min={20}
+                    max={120}
+                    step={5}
+                    format={(v) => `${v} px`}
+                    onChange={(v) => store.updateVizSettings(id, { clusterRadius: v })}
+                  />
+                  <SliderRow
+                    label="Max Zoom"
+                    value={settings.cluster.maxZoom}
+                    min={8}
+                    max={18}
+                    step={1}
+                    format={(v) => `${v}\u00D7`}
+                    onChange={(v) => store.updateVizSettings(id, { maxZoom: v })}
+                  />
+                  <SwatchPicker
+                    label="Color"
+                    value={settings.cluster.color}
+                    onChange={(c) => store.updateVizSettings(id, { color: c })}
+                  />
+                  <SliderRow
+                    label="Opacity"
+                    value={settings.cluster.opacity}
+                    min={20}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateVizSettings(id, { opacity: v })}
+                  />
+                </div>
+              )}
+
+              {viz === "hexagon" && (
+                <div className="space-y-3">
+                  <SliderRow
+                    label="Radius"
+                    value={layer.appearance.radius}
+                    min={3}
+                    max={24}
+                    step={1}
+                    format={(v) => `${v} px`}
+                    onChange={(v) => store.updateAppearance(id, { radius: v })}
+                  />
+                  <SliderRow
+                    label="Opacity"
+                    value={layer.appearance.opacity}
+                    min={20}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateAppearance(id, { opacity: v })}
+                  />
+                  <SwatchPicker
+                    label="Color"
+                    value={color}
+                    onChange={(c) => store.updateAppearance(id, { color: c })}
+                  />
+                  <p className="text-[11px] text-ink-400">
+                    Hexagon aggregation renders all matching records as 3D hexagons.
+                  </p>
+                </div>
+              )}
+
+              {viz === "density" && (
+                <div className="space-y-3">
+                  <SliderRow
+                    label="Density"
+                    value={layer.appearance.radius}
+                    min={3}
+                    max={18}
+                    step={1}
+                    format={(v) => `${v} px`}
+                    onChange={(v) => store.updateAppearance(id, { radius: v })}
+                  />
+                  <SliderRow
+                    label="Opacity"
+                    value={layer.appearance.opacity}
+                    min={20}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateAppearance(id, { opacity: v })}
+                  />
+                  <SwatchPicker
+                    label="Color"
+                    value={color}
+                    onChange={(c) => store.updateAppearance(id, { color: c })}
+                  />
+                </div>
+              )}
             </div>
           </Section>
 
@@ -308,7 +583,7 @@ export default function LayerPanel(props: LayerPanelProps) {
               activeFilters > 0 ? (
                 <button
                   type="button"
-                  onClick={() => props.onClearFilters(id)}
+                  onClick={() => store.clearFilters(id)}
                   className="focusable rounded-md px-1.5 py-0.5 text-[11px] font-medium text-brand-700 transition-colors hover:bg-brand-50"
                 >
                   Clear all
@@ -323,45 +598,7 @@ export default function LayerPanel(props: LayerPanelProps) {
               defs={defs}
               filters={layer.filters}
               data={layer.data}
-              onChange={(next) =>
-                props.onSetFilters(id, next as Record<string, FilterValue>)
-              }
-            />
-          </Section>
-
-          {/* ---- Appearance ---- */}
-          <Section title="Appearance">
-            <SliderRow
-              label="Opacity"
-              value={layer.appearance.opacity}
-              min={20}
-              max={100}
-              step={5}
-              format={(v) => `${v}%`}
-              onChange={(v) => props.onUpdate(id, { appearance: { opacity: v } })}
-            />
-            <SliderRow
-              label="Point size"
-              value={layer.appearance.radius}
-              min={3}
-              max={24}
-              step={1}
-              format={(v) => `${v} px`}
-              onChange={(v) => props.onUpdate(id, { appearance: { radius: v } })}
-            />
-            <SliderRow
-              label="Border width"
-              value={layer.appearance.lineWidth}
-              min={0}
-              max={6}
-              step={1}
-              format={(v) => (v === 0 ? "None" : `${v} px`)}
-              onChange={(v) => props.onUpdate(id, { appearance: { lineWidth: v } })}
-            />
-            <SwatchPicker
-              label="Layer color"
-              value={color}
-              onChange={(c) => props.onUpdate(id, { appearance: { color: c } })}
+              onChange={(next) => store.setFilters(id, next as Record<string, FilterValue>)}
             />
           </Section>
 
@@ -393,7 +630,9 @@ export default function LayerPanel(props: LayerPanelProps) {
                       className="h-2.5 w-2.5 rounded-full ring-2 ring-white"
                       style={{ background: color }}
                     />
-                    <span className="text-[13px] font-medium text-ink-700">{VIZ_LABEL[layer.visualizationType]}</span>
+                    <span className="text-[13px] font-medium text-ink-700">
+                      {VISUALIZATION_LABELS[viz]}
+                    </span>
                   </div>
                   <div className="mt-0.5 text-[10.5px] text-ink-400">Rendered as</div>
                 </div>
@@ -405,14 +644,23 @@ export default function LayerPanel(props: LayerPanelProps) {
               </div>
             )}
           </Section>
+
           <div className="h-4" />
-
-
-
         </div>
       )}
     </div>
   );
 }
 
-
+function gradientFor(g: "purple" | "viridis" | "warm" | "cool"): string {
+  switch (g) {
+    case "purple":
+      return "linear-gradient(90deg,#ede9fe 0%,#a78bfa 50%,#5B2FBF 100%)";
+    case "viridis":
+      return "linear-gradient(90deg,#fde725 0%,#21908d 50%,#440154 100%)";
+    case "warm":
+      return "linear-gradient(90deg,#fef3c7 0%,#f97316 50%,#7c2d12 100%)";
+    case "cool":
+      return "linear-gradient(90deg,#cffafe 0%,#06b6d4 50%,#1e3a8a 100%)";
+  }
+}

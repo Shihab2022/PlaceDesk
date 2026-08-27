@@ -4,52 +4,26 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiArrowUpRight,
   FiDatabase,
-  FiFolder,
   FiMapPin,
   FiSearch,
-  FiSmartphone,
 } from "react-icons/fi";
+import { CATEGORIES } from "../data";
+import { useAppStore } from "../app/AppStoreContext";
 
 interface Group {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  items: { name: string; hint?: string }[];
+  items: SearchItem[];
 }
 
-const GROUPS: Group[] = [
-  {
-    label: "Locations",
-    icon: FiMapPin,
-    items: [
-      { name: "Bengaluru", hint: "State · Karnataka" },
-      { name: "Mumbai", hint: "City · Maharashtra" },
-      { name: "Delhi NCR", hint: "Metropolitan area" },
-    ],
-  },
-  {
-    label: "Businesses",
-    icon: FiSmartphone,
-    items: [
-      { name: "Electronics stores", hint: "2,481 locations" },
-      { name: "Fitness centers", hint: "762 locations" },
-      { name: "Restaurants", hint: "3,102 locations" },
-    ],
-  },
-  {
-    label: "Datasets",
-    icon: FiDatabase,
-    items: [
-      { name: "Business Locations", hint: "Retail layer" },
-      { name: "Demographics", hint: "Census 2021" },
-      { name: "Retail Data", hint: "Updated daily" },
-    ],
-  },
-  {
-    label: "Recent Searches",
-    icon: FiFolder,
-    items: [{ name: "Electronics — Bengaluru" }, { name: "Fashion — Koramangala" }],
-  },
-];
+interface SearchItem {
+  name: string;
+  hint?: string;
+  layerId?: string;
+  locationId?: string;
+  latitude?: number;
+  longitude?: number;
+}
 
 interface GlobalSearchProps {
   open: boolean;
@@ -57,22 +31,47 @@ interface GlobalSearchProps {
 }
 
 export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
+  const store = useAppStore();
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return GROUPS;
-    return GROUPS.map((g) => ({
-      ...g,
-      items: g.items.filter(
-        (i) =>
-          i.name.toLowerCase().includes(q) ||
-          (i.hint ?? "").toLowerCase().includes(q),
-      ),
-    })).filter((g) => g.items.length > 0);
-  }, [query]);
+    if (!q) return [] as Group[];
+    const locations: SearchItem[] = [];
+    for (const layer of store.layers) {
+      for (const location of layer.data) {
+        if (!store.matchingIds.has(location.id)) continue;
+        locations.push({
+          name: location.name,
+          hint: `${layer.label} · ${location.town_name || "Unknown"}`,
+          layerId: layer.id,
+          locationId: location.id,
+          latitude: location.lat,
+          longitude: location.lng,
+        });
+        if (locations.length >= 30) break;
+      }
+      if (locations.length >= 30) break;
+    }
+    const categories: SearchItem[] = store.searchResults.layersTouched.map((key) => {
+      const category = CATEGORIES.find((item) => item.key === key);
+      return {
+        name: category?.label ?? key,
+        hint: `${store.searchResults.byCategory.get(key)?.length ?? 0} locations`,
+      };
+    });
+    const brands = [...store.searchResults.byBrand.keys()].slice(0, 12).map((name) => ({
+      name,
+      hint: "Brand",
+    }));
+    const next: Group[] = [];
+    if (categories.length) next.push({ label: "Categories", icon: FiDatabase, items: categories });
+    if (locations.length) next.push({ label: "Locations", icon: FiMapPin, items: locations });
+    if (brands.length) next.push({ label: "Brands", icon: FiSearch, items: brands });
+    return next;
+  }, [query, store.layers, store.matchingIds, store.searchResults]);
 
   const flatResults = useMemo(
     () => results.flatMap((g) => g.items.map((item) => ({ group: g.label, ...item }))),
@@ -80,12 +79,14 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   );
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    setTimeout(() => {
       setQuery("");
+      store.clearSearch();
       setActive(0);
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
-  }, [open]);
+    }, 0);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, [open, store.clearSearch]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -97,7 +98,22 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
   if (!open) return null;
 
-  let cursor = -1;
+  const selectItem = (item: SearchItem) => {
+    if (item.layerId && item.locationId) {
+      const layer = store.layers.find((candidate) => candidate.id === item.layerId);
+      const location = layer?.data.find((candidate) => candidate.id === item.locationId);
+      if (layer && location) {
+        store.setActiveId(layer.id);
+        store.setSelectedLocation(location, layer.id);
+        store.setViewport({
+          longitude: location.lng,
+          latitude: location.lat,
+          zoom: Math.max(store.viewState.zoom, 14),
+        });
+      }
+    }
+    onClose();
+  };
 
   return (
     <div
@@ -119,6 +135,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
+            store.setSearchQuery(e.target.value);
               setActive(0);
             }}
             onKeyDown={(e) => {
@@ -145,7 +162,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
 
         {/* Results */}
         <div className="max-h-[50vh] overflow-y-auto p-2">
-          {results.length === 0 && (
+          {results.length === 0 && query.trim() && (
             <div className="px-3 py-10 text-center text-[13px] text-ink-400">
               No results for “{query}”
             </div>
@@ -161,14 +178,16 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                     {group.label}
                   </span>
                 </div>
-                {group.items.map((item) => {
-                  cursor += 1;
+                {group.items.map((item, itemIndex) => {
+                  const cursor = results
+                    .slice(0, results.indexOf(group))
+                    .reduce((sum, current) => sum + current.items.length, 0) + itemIndex;
                   const activeItem = cursor === active;
                   return (
                     <button
                       key={`${group.label}-${item.name}`}
                       type="button"
-                      onClick={onClose}
+                      onClick={() => selectItem(item)}
                       onMouseEnter={() => setActive(cursor)}
                       className={`focusable flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
                         activeItem ? "bg-brand-50" : ""

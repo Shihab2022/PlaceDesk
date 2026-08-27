@@ -1,166 +1,360 @@
-"use client";
+﻿"use client";
 
-import { FiChevronLeft, FiExternalLink, FiMapPin, FiStar } from "react-icons/fi";
+import { useEffect, useMemo, useState } from "react";
+import {
+  FiCopy,
+  FiExternalLink,
+  FiNavigation,
+  FiStar,
+  FiX,
+} from "react-icons/fi";
+import { parseTextArray, getRating } from "../data";
 import type { LocationData } from "../data";
+import { useAppStore } from "../app/AppStoreContext";
 
-interface LocationDetailsProps {
+interface Props {
   location: LocationData;
   layerLabel: string;
   accent: string;
+  layerId?: string;
   onClose: () => void;
 }
 
 function formatCurrency(v: number): string {
   if (v <= 0) return "N/A";
-  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`;
-  return `₹${Math.round(v)}`;
+  if (v >= 100000) return `\u09F3${(v / 100000).toFixed(1)}L`;
+  return `\u09F3${Math.round(v)}`;
 }
 
-function statRow(label: string, value: string | number) {
-  return (
-    <div className="flex justify-between py-1.5">
-      <span className="text-[11px] text-ink-500">{label}</span>
-      <span className="text-[11px] font-semibold text-ink-900 tabular-nums">
-        {value}
-      </span>
-    </div>
-  );
+function formatVotes(v: number): string {
+  if (v <= 0) return "0";
+  return v.toLocaleString("en-US");
 }
+
+/* ----------------------------------------------------------------- */
+/* Category-aware field selection                                      */
+/* ----------------------------------------------------------------- */
+
+interface Field {
+  label: string;
+  value: string;
+  emphasize?: boolean;
+}
+
+function fieldsForCategory(loc: LocationData): Field[] {
+  const subs = parseTextArray(loc.sub_categories).filter(
+    (x) => x && x !== "N_A",
+  );
+  const services = parseTextArray(loc.service_options).filter(
+    (x) => x && x !== "N_A",
+  );
+  const rating = getRating(loc);
+  const ratingTxt = loc.number_of_votes > 0 ? rating.toFixed(1) : "N/A";
+
+  const address = loc.address?.trim();
+  const town = loc.town_name && loc.town_name !== "n/a" ? loc.town_name : null;
+  const pincode = loc.pincode;
+
+  const cat = (loc.category || "").toLowerCase();
+
+  const base: Field[] = [];
+  const push = (f: Field) => base.push(f);
+
+  // Always show address (if available)
+  if (address) push({ label: "Address", value: address, emphasize: true });
+  if (town) push({ label: "Town / District", value: capitalize(town) });
+
+  // Category-specific fields
+  if (cat === "food" || subs.some((s) => /biryani|cafe|restaurant|bakery|street/i.test(s))) {
+    push({ label: "Cuisine / Subcategory", value: subs[0] ?? "N/A" });
+    push({ label: "Restaurant Type", value: humanizeType(loc.type) });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Cost for Two", value: formatCurrency(loc.cost_for_two) });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+    push({ label: "Rating", value: ratingTxt });
+    if (services.length) push({ label: "Dining Options", value: services.join(", ") });
+  } else if (cat === "furniture") {
+    push({ label: "Type", value: humanizeType(loc.type) });
+    push({ label: "Subcategory", value: subs[0] ?? "N/A" });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Price Range", value: formatCurrency(loc.cost_for_two) });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "medical") {
+    push({ label: "Medical Type", value: subs[0] ?? humanizeType(loc.type) });
+    push({ label: "Facility Type", value: humanizeType(loc.type) });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+    push({ label: "Rating", value: ratingTxt });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "electronics") {
+    push({ label: "Subcategory", value: subs[0] ?? "N/A" });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Store Type", value: humanizeType(loc.type) });
+    push({ label: "Price Range", value: formatCurrency(loc.cost_for_two) });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "education") {
+    push({ label: "Education Level", value: subs[0] ?? "N/A" });
+    push({ label: "Institution Type", value: humanizeType(loc.type) });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Board / Brand", value: loc.brand_name });
+    push({ label: "Rating", value: ratingTxt });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+  } else if (cat === "fashion") {
+    push({ label: "Category", value: subs[0] ?? "N/A" });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Store Type", value: humanizeType(loc.type) });
+    push({ label: "Price Range", value: formatCurrency(loc.cost_for_two) });
+    push({ label: "Rating", value: ratingTxt });
+  } else if (cat === "fitness") {
+    push({ label: "Discipline", value: subs[0] ?? "N/A" });
+    push({ label: "Brand", value: loc.brand_name !== "N_A" ? loc.brand_name : "Independent" });
+    push({ label: "Membership Range", value: formatCurrency(loc.cost_for_two) });
+    push({ label: "Rating", value: ratingTxt });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "malls") {
+    push({ label: "Mall Type", value: subs[0] ?? humanizeType(loc.type) });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Operator", value: loc.brand_name });
+    push({ label: "Spend Range", value: formatCurrency(loc.cost_for_two) });
+    if (services.length) push({ label: "Amenities", value: services.join(", ") });
+  } else if (cat === "transport") {
+    push({ label: "Mode", value: subs[0] ?? "N/A" });
+    push({ label: "Provider", value: loc.brand_name !== "N_A" ? loc.brand_name : "Independent" });
+    push({ label: "Facility Type", value: humanizeType(loc.type) });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "companies") {
+    push({ label: "Service Line", value: subs[0] ?? "N/A" });
+    push({ label: "Company", value: loc.brand_name !== "N_A" ? loc.brand_name : "Independent" });
+    push({ label: "Segment", value: humanizeType(loc.type) });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+  } else if (cat === "leisure") {
+    push({ label: "Leisure Category", value: subs[0] ?? humanizeType(loc.type) });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Venue Type", value: humanizeType(loc.type) });
+    push({ label: "Price Range", value: formatCurrency(loc.cost_for_two) });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "supermarket") {
+    push({ label: "Section", value: subs[0] ?? "N/A" });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Store Type", value: humanizeType(loc.type) });
+    push({ label: "Basket Range", value: formatCurrency(loc.cost_for_two) });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  } else if (cat === "others") {
+    push({ label: "Category", value: subs[0] ?? "N/A" });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Type", value: humanizeType(loc.type) });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+  } else {
+    // Generic fallback
+    if (subs.length) push({ label: "Subcategory", value: subs[0] });
+    if (loc.brand_name && loc.brand_name !== "N_A") push({ label: "Brand", value: loc.brand_name });
+    push({ label: "Type", value: humanizeType(loc.type) });
+    push({ label: "Rating", value: ratingTxt });
+    push({ label: "Votes", value: formatVotes(loc.number_of_votes) });
+    if (services.length) push({ label: "Service Options", value: services.join(", ") });
+  }
+
+  if (pincode) push({ label: "Pincode", value: pincode });
+
+  return base;
+}
+
+function humanizeType(t?: string): string {
+  if (!t) return "N/A";
+  return t.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+function capitalize(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/* ----------------------------------------------------------------- */
+/* Inspector                                                          */
+/* ----------------------------------------------------------------- */
 
 export default function LocationDetails({
   location,
   layerLabel,
   accent,
+  layerId,
   onClose,
-}: LocationDetailsProps) {
-  const sub = String(location.sub_categories || "").replace(/[\[\]]/g, "");
-  const rating = location.number_of_votes
-    ? Math.min(5, 3 + (location.number_of_votes % 20) / 10).toFixed(1)
-    : "—";
+}: Props) {
+  const store = useAppStore();
+  const [copied, setCopied] = useState(false);
+
+  const fields = useMemo(() => fieldsForCategory(location), [location]);
+
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(location.address || location.name);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const onViewOnMap = () => {
+    store.setViewport({
+      longitude: location.lng,
+      latitude: location.lat,
+      zoom: Math.max(store.viewState.zoom, 14),
+    });
+    onClose();
+  };
+
+  const onStreetView = () => {
+    store.openStreetView({
+      lat: location.lat,
+      lng: location.lng,
+      name: location.name,
+      address: location.address,
+      layerId,
+      layerLabel,
+      categoryKey: (location.category as never) || undefined,
+    });
+  };
+
+  const onDirections = () => {
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const subs = parseTextArray(location.sub_categories);
 
   return (
     <>
-      {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-ink-900/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-ink-900/30 backdrop-blur-[2px]"
         onClick={onClose}
         aria-hidden="true"
       />
-
-      {/* Slide-in panel */}
       <div
-        className="anim-slide-in-right fixed inset-y-0 right-0 z-50 flex w-full max-w-[380px] flex-col border-l border-line bg-white shadow-2xl sm:translate-x-0"
-        style={{ borderTopLeftRadius: 0 }}
-        aria-label="Location details"
+        role="dialog"
+        aria-label="Location inspector"
+        className="anim-fade-right fixed inset-y-0 right-0 z-50 flex w-full max-w-[400px] flex-col border-l border-line bg-white shadow-2xl"
       >
-        <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close details"
-            title="Close"
-            className="focusable flex h-7 w-7 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
-          >
-            <FiChevronLeft className="h-4 w-4" />
-          </button>
-          <div className="flex items-center gap-2">
+        {/* ---- Header ---- */}
+        <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">
+            Location Inspector
+          </span>
+          <div className="flex items-center gap-1">
             <button
               type="button"
-              aria-label="Add to collection"
-              title="Add to collection"
-              className="focusable rounded-lg p-1.5 text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
+              aria-label="Save to favorites"
+              title="Save to favorites"
+              className="focusable flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
             >
               <FiStar className="h-4 w-4" />
             </button>
-              <button
-              type="button"
-              aria-label="Get directions"
-              title="Get directions"
-              className="focusable rounded-lg p-1.5 text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
-            >
-              <FiMapPin className="h-4 w-4" />
-            </button>
             <button
               type="button"
-              aria-label="Open in new tab"
-              title="View on map"
-              className="focusable rounded-lg p-1.5 text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
+              onClick={onClose}
+              aria-label="Close inspector"
+              title="Close"
+              className="focusable flex h-8 w-8 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
             >
-              <FiExternalLink className="h-4 w-4" />
+              <FiX className="h-4 w-4" />
             </button>
           </div>
         </div>
 
+        {/* ---- Scrollable content ---- */}
         <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-4">
-            <div className="mb-3 flex items-start justify-between gap-2">
-              <h2 className="text-[17px] font-semibold leading-tight text-ink-900">
-                {location.name}
-              </h2>
-              <span
-                className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
-                style={{
-                  backgroundColor: `${accent}15`,
-                  color: accent,
-                }}
-              >
-                {layerLabel}
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-[12px] text-ink-600">{location.address}</p>
-              {location.town_name && (
-                <p className="mt-0.5 text-[11px] text-ink-400">
-                  {location.town_name}
-                </p>
-              )}
-            </div>
-
-            {sub && sub !== "N_A" && sub !== "[]" && (
-              <div className="mb-3">
-                <span className="inline-block rounded-md bg-canvas px-2 py-1 text-[11px] text-ink-600">
-                  {sub.split(",")[0]}
-                </span>
-              </div>
+          {/* Title block */}
+          <div className="px-4 pb-3 pt-4">
+            <span
+              className="mb-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide"
+              style={{ backgroundColor: `${accent}15`, color: accent }}
+            >
+              {layerLabel}
+            </span>
+            <h2 className="text-[18px] font-semibold leading-tight text-ink-900">
+              {location.name}
+            </h2>
+            {subs.length > 0 && (
+              <p className="mt-1 text-[12px] text-ink-500">
+                {subs.slice(0, 3).join(" \u00B7 ")}
+              </p>
             )}
-
-            <div className="border-y border-line py-3">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
-                Key metrics
-              </div>
-              {statRow("Rating", rating)}
-              {location.number_of_votes > 0 &&
-                statRow("Votes", location.number_of_votes.toLocaleString("en-US"))}
-              {location.cost_for_two > 0 &&
-                statRow("Cost for two", formatCurrency(location.cost_for_two))}
-              {location.brand_name && location.brand_name !== "N_A" &&
-                statRow("Brand", location.brand_name)}
-              {location.pincode && statRow("Pincode", location.pincode)}
-            </div>
-
-            <div className="mt-4 border-t border-line pt-3">
-              <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
-                Location
-              </div>
-              <div className="text-[12px] text-ink-600">
-                Lat: {location.lat.toFixed(6)}
-              </div>
-              <div className="text-[12px] text-ink-600">
-                Lng: {location.lng.toFixed(6)}
-              </div>
-            </div>
+            {(location.town_name || location.pincode) && (
+              <p className="mt-1 text-[12px] font-medium text-ink-600">
+                {capitalize(location.town_name || "")}
+                {location.pincode ? ` \u2014 ${location.pincode}` : ""}
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center justify-between border-t border-line px-4 py-3">
+          {/* Field list */}
+          <div className="border-t border-line px-4 py-3">
+            <dl className="divide-y divide-line/70">
+              {fields.map((f) => (
+                <div key={f.label} className="flex items-start justify-between gap-3 py-2.5">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-ink-400">
+                    {f.label}
+                  </dt>
+                  <dd
+                    className={`max-w-[60%] text-right text-[12px] ${
+                      f.emphasize ? "font-medium text-ink-900" : "text-ink-700"
+                    }`}
+                  >
+                    {f.value || "N/A"}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          {/* Coordinates */}
+          <div className="border-t border-line px-4 py-3">
+            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
+              Coordinates
+            </div>
+            <div className="font-mono text-[11.5px] text-ink-700">
+              {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
+            </div>
+          </div>
+        </div>
+
+        {/* ---- Action footer ---- */}
+        <div className="shrink-0 space-y-2 border-t border-line bg-white px-4 py-3">
+          <button
+            type="button"
+            onClick={onStreetView}
+            className="btn-primary w-full justify-center"
+          >
+            <FiNavigation className="h-3.5 w-3.5" /> Street View
+          </button>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={onClose}
-              className="btn-primary flex items-center gap-1.5"
+              onClick={onViewOnMap}
+              className="focusable flex items-center justify-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-[12px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700"
             >
-              Close
+              <FiExternalLink className="h-3.5 w-3.5" /> View on Map
+            </button>
+            <button
+              type="button"
+              onClick={onCopy}
+              className="focusable flex items-center justify-center gap-1.5 rounded-lg border border-line bg-white px-3 py-2 text-[12px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700"
+            >
+              <FiCopy className="h-3.5 w-3.5" /> {copied ? "Copied!" : "Copy Address"}
             </button>
           </div>
+          <button
+            type="button"
+            onClick={onDirections}
+            className="focusable flex w-full items-center justify-center gap-1.5 rounded-lg border border-line bg-canvas px-3 py-2 text-[12px] font-medium text-ink-600 transition-colors hover:text-brand-700"
+          >
+            Get directions in Maps
+          </button>
         </div>
       </div>
     </>

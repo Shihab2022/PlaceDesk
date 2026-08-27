@@ -8,6 +8,7 @@ import { HeatmapLayer, HexagonLayer } from "@deck.gl/aggregation-layers";
 import Map from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { ComputedLayer, LocationData } from "../data";
+import { useAppStore } from "../app/AppStoreContext";
 
 type Position = [number, number, number];
 
@@ -59,6 +60,7 @@ export default function MapView({
   onSelect,
   mapStyle,
 }: MapViewProps) {
+  const store = useAppStore();
   const deckLayers = useMemo(() => {
     const out: any[] = [];
     for (const l of layers) {
@@ -70,6 +72,9 @@ export default function MapView({
       const r = l.appearance.radius;
       const bw = Math.max(1, l.appearance.lineWidth);
       const selectedId = selected?.layerId === l.id ? selected.locId : null;
+      const searchActive = store.hasActiveSearch;
+      const isMatch = (d: LocationData) =>
+        !searchActive || store.matchingIds.has(d.id);
 
       if (l.visualizationType === "heatmap") {
         out.push(
@@ -96,8 +101,9 @@ export default function MapView({
             radiusMaxPixels: 30,
             getRadius: (d: LocationData) => (d.id === selectedId ? r * 1.6 : r * 0.55),
             lineWidthMinPixels: bw,
-            getFillColor: () => [255, 255, 255, 230],
-            getLineColor: () => rgb,
+            getFillColor: (d: LocationData) =>
+              isMatch(d) ? [255, 255, 255, 230] : [180, 185, 195, 90],
+            getLineColor: (d: LocationData) => (isMatch(d) ? rgb : [150, 155, 165]),
             getPosition,
             onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
           }),
@@ -166,18 +172,20 @@ export default function MapView({
             return d.id === selectedId ? r * 1.5 : r;
           },
           lineWidthMinPixels: bw,
-          getFillColor: () =>
-            l.visualizationType === "density"
-              ? [...rgb, 120]
-              : [255, 255, 255, 225],
-          getLineColor: () => rgb,
+          getFillColor: (d: LocationData) =>
+            isMatch(d)
+              ? l.visualizationType === "density"
+                ? [...rgb, 120]
+                : [255, 255, 255, 225]
+              : [180, 185, 195, 70],
+          getLineColor: (d: LocationData) => (isMatch(d) ? rgb : [150, 155, 165]),
           getPosition,
           onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
         }),
       );
     }
     return out;
-  }, [layers, selected, onSelect]);
+  }, [layers, selected, onSelect, store.hasActiveSearch, store.matchingIds]);
 
   return (
     <div className="absolute inset-0">
@@ -238,4 +246,3 @@ export default function MapView({
     </div>
   );
 }
-
