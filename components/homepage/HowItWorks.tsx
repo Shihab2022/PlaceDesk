@@ -16,7 +16,7 @@ export default function HowItWorks() {
       <div className="mx-auto max-w-2xl text-center">
         <Eyebrow>From coordinates to context</Eyebrow>
         <h2 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
-          How Spatic works.
+          How PlaceDesk works.
         </h2>
       </div>
 

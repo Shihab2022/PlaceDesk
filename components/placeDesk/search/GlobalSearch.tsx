@@ -225,7 +225,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             <kbd className="rounded border border-line bg-canvas px-1">↑↓</kbd> navigate
             <kbd className="ml-1 rounded border border-line bg-canvas px-1">↵</kbd> select
           </span>
-          <span>Spatic · Command Search</span>
+          <span>PlaceDesk · Command Search</span>
         </div>
       </div>
     </div>

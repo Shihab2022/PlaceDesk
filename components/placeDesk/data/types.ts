@@ -2,7 +2,7 @@ import type { ComponentType } from "react";
 import type { VisualizationSettings } from "../app/VisualizationSettings";
 
 /* ================================================================ */
-/* Core types for the multi-layer Spatic workspace                  */
+/* Core types for the multi-layer PlaceDesk workspace                  */
 /* ================================================================ */
 
 /** A single location/business record â€” mirrors the Delhi dataset schema. */

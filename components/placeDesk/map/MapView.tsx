@@ -297,11 +297,12 @@ export default function MapView({
   ]);
 
   return (
-    <div className="absolute inset-0">
+    <div id="placedesk-map" className="absolute inset-0">
       <DeckGL
         viewState={viewState}
         onViewStateChange={({ viewState: vs }: any) => onViewState(vs)}
         controller={true}
+        {...({ glOptions: { preserveDrawingBuffer: true } } as any)}
         layers={deckLayers}
         getTooltip={({
           object,
@@ -349,6 +350,7 @@ export default function MapView({
           mapboxAccessToken={process.env.NEXT_PUBLIC_MAP_BOX_ACCESS_TOKEN}
           mapStyle={mapStyle}
           reuseMaps
+          preserveDrawingBuffer
           attributionControl={false}
         />
       </DeckGL>

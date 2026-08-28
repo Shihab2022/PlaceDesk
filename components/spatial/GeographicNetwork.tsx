@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -53,7 +54,11 @@ export default function GeographicNetwork({
       }
       nearest.sort((a, b) => a.d - b.d);
       nearest.slice(0, 2).forEach(({ j }) => {
-        if (!e.some((ed) => (ed.a === i && ed.b === j) || (ed.a === j && ed.b === i))) {
+        if (
+          !e.some(
+            (ed) => (ed.a === i && ed.b === j) || (ed.a === j && ed.b === i),
+          )
+        ) {
           e.push({ a: i, b: j });
         }
       });
@@ -114,18 +119,20 @@ export default function GeographicNetwork({
           </g>
         ))}
         {showLabels &&
-          ["Market cluster", "Retail corridor", "Growth zone"].map((label, i) => (
-            <text
-              key={label}
-              x={[30, 58, 74][i]}
-              y={[18, 22, 56][i]}
-              fontSize="2.6"
-              fill="rgba(52,52,52,0.5)"
-              fontFamily="var(--font-inter)"
-            >
-              {label}
-            </text>
-          ))}
+          ["Market cluster", "Retail corridor", "Growth zone"].map(
+            (label, i) => (
+              <text
+                key={label}
+                x={[30, 58, 74][i]}
+                y={[18, 22, 56][i]}
+                fontSize="2.6"
+                fill="rgba(52,52,52,0.5)"
+                fontFamily="var(--font-inter)"
+              >
+                {label}
+              </text>
+            ),
+          )}
       </svg>
     </div>
   );

@@ -54,7 +54,7 @@ export default function Footer() {
             <div className="flex items-center gap-2.5">
               <BrandLogo size={32} />
               <span className="flex flex-col leading-none">
-                <span className="text-base font-semibold tracking-tight text-ink-900">Spatic</span>
+                <span className="text-base font-semibold tracking-tight text-ink-900">PlaceDesk</span>
                 <span className="text-[9px] uppercase tracking-[0.18em] text-ink-400">Spatial Intelligence</span>
               </span>
             </div>
@@ -84,7 +84,7 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-line/70 pt-6 sm:flex-row">
           <p className="text-xs text-ink-400">
-            © {new Date().getFullYear()} Spatic — Location Intelligence Platform
+            © {new Date().getFullYear()} PlaceDesk — Location Intelligence Platform
           </p>
           <p className="text-xs text-ink-400">
             Turn Location Into Intelligence.

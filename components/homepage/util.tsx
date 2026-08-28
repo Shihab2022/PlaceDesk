@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react";
 
 /**
- * Shared helpers for the Spatic marketing homepage.
+ * Shared helpers for the PlaceDesk marketing homepage.
  */
 
 export function Reveal({
@@ -71,7 +71,7 @@ export function Section({
   className?: string;
 }) {
   return (
-    <section id={id} className={"relative mx-auto w-full max-w-7xl px-6 sm:px-8 " + className}>
+    <section id={id} className={"relative mx-auto w-full max-w-7xl px-6 py-16 sm:px-8 sm:py-24 " + className}>
       {children}
     </section>
   );

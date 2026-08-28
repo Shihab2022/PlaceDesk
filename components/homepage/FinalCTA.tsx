@@ -41,7 +41,7 @@ export default function FinalCTA() {
               href="/dashboard"
               className="focusable group inline-flex items-center gap-2 rounded-xl bg-brand-700 px-7 py-3.5 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-800 hover:shadow-lg"
             >
-              Explore Spatic
+              Explore PlaceDesk
               <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
                 →
               </span>

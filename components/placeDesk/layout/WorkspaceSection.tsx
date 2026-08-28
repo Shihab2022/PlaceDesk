@@ -22,7 +22,7 @@ export default function WorkspaceSection({
     <section className="absolute inset-x-0 bottom-0 top-[55px] z-50 overflow-y-auto bg-canvas p-5 sm:p-7">
       <div className="mx-auto max-w-6xl">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-700">
-          Spatic workspace
+          PlaceDesk workspace
         </p>
         <h2 className="mt-1 text-2xl font-semibold capitalize text-ink-900">{title}</h2>
         <p className="mt-1 text-[13px] text-ink-500">{city.label} · live workspace data</p>

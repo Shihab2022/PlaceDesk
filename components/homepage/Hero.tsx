@@ -33,7 +33,7 @@ export default function Hero() {
           </Reveal>
           <Reveal delay={140}>
             <p className="mx-auto mt-6 max-w-2xl text-pretty text-base leading-relaxed text-ink-500 sm:text-lg">
-              Spatic transforms complex geographic and business data into
+              PlaceDesk transforms complex geographic and business data into
               interactive spatial intelligence — helping you discover markets,
               understand location patterns, compare regions, and make smarter
               decisions based on where things actually happen.
@@ -45,7 +45,7 @@ export default function Hero() {
                 href="/dashboard"
                 className="focusable group inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-700 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-brand-600/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-brand-800 hover:shadow-lg hover:shadow-brand-600/30 sm:w-auto"
               >
-                Explore Spatic
+                Explore PlaceDesk
                 <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
                   →
                 </span>

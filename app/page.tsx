@@ -13,15 +13,17 @@ import SearchExperience from "@/components/homepage/SearchExperience";
 import Philosophy from "@/components/homepage/Philosophy";
 import FinalCTA from "@/components/homepage/FinalCTA";
 import Footer from "@/components/homepage/Footer";
+import SpatialBackground from "@/components/homepage/SpatialBackground";
 
 /**
- * Spatic — marketing / product homepage.
+ * PlaceDesk — marketing / product homepage.
  * Introduces the location-intelligence product and links to the live
  * workspace at /dashboard. Not the GIS application itself.
  */
 export default function HomePage() {
   return (
     <div className="relative flex min-h-screen flex-col bg-white">
+      <SpatialBackground />
       <Header />
       <main className="flex-1">
         <Hero />

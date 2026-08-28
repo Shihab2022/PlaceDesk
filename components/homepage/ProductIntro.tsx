@@ -4,17 +4,17 @@ import { Reveal, Section, Eyebrow } from "./util";
 
 const STEPS = ["Data", "Layers", "Filter", "Visualize", "Explore", "Insight"];
 
-/** "What is Spatic" — the product pipeline. */
+/** "What is PlaceDesk" — the product pipeline. */
 export default function ProductIntro() {
   return (
     <Section id="platform" className="py-20 sm:py-24">
       <div className="mx-auto max-w-2xl text-center">
-        <Eyebrow>What is Spatic</Eyebrow>
+        <Eyebrow>What is PlaceDesk</Eyebrow>
         <h2 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
           One Platform. Every Location Story.
         </h2>
         <p className="mt-5 text-pretty text-base leading-relaxed text-ink-500">
-          Spatic brings geographic data, business locations, visualization,
+          PlaceDesk brings geographic data, business locations, visualization,
           filtering, and spatial analysis into one intelligent workspace.
         </p>
       </div>

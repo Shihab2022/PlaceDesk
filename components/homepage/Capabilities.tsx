@@ -65,7 +65,7 @@ export default function Capabilities() {
   return (
     <Section className="py-20 sm:py-24">
       <div className="mx-auto max-w-2xl text-center">
-        <Eyebrow>What Spatic lets you see</Eyebrow>
+        <Eyebrow>What PlaceDesk lets you see</Eyebrow>
         <h2 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
           Capabilities that change{" "}
           <span className="text-ink-500">what a location can tell you.</span>

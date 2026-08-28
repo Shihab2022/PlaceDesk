@@ -39,7 +39,7 @@ export default function Header() {
           <BrandLogo size={34} className="transition-transform duration-300 group-hover:scale-105" />
           <span className="flex flex-col leading-none">
             <span className="text-[17px] font-semibold tracking-tight text-ink-900">
-              Spatic
+              PlaceDesk
             </span>
             <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-ink-500">
               Spatial Intelligence
@@ -72,7 +72,7 @@ export default function Header() {
             href="/dashboard"
             className="focusable group inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/30 transition-all duration-200 hover:-translate-y-px hover:bg-brand-800 hover:shadow-md hover:shadow-brand-600/30"
           >
-            Explore Spatic
+            Explore PlaceDesk
             <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
               →
             </span>
@@ -116,7 +116,7 @@ export default function Header() {
               href="/dashboard"
               className="focusable mt-2 rounded-lg bg-brand-700 px-4 py-2.5 text-center text-sm font-semibold text-white"
             >
-              Explore Spatic →
+              Explore PlaceDesk →
             </a>
           </nav>
         </div>

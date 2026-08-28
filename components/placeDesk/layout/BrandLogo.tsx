@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Spatic brand mark — a geometric glyph combining layered map tiles,
+ * PlaceDesk brand mark — a geometric glyph combining layered map tiles,
  * coordinate nodes and connected locations.
  */
 export default function BrandLogo({
@@ -21,12 +21,12 @@ export default function BrandLogo({
       className={className}
     >
       <defs>
-        <linearGradient id="spatic_g" x1="0" y1="0" x2="48" y2="48">
+        <linearGradient id="placedesk_g" x1="0" y1="0" x2="48" y2="48">
           <stop offset="0" stopColor="#7C4DFF" />
           <stop offset="1" stopColor="#5B2FBF" />
         </linearGradient>
       </defs>
-      <rect width="48" height="48" rx="13" fill="url(#spatic_g)" />
+      <rect width="48" height="48" rx="13" fill="url(#placedesk_g)" />
       {/* coordinate grid lines */}
       <path
         d="M12 14h24M12 22h24M12 30h24M12 38h24M18 8v32M26 8v32M34 8v32"

@@ -1,7 +1,7 @@
 ﻿"use client";
 
 /**
- * Global application state for Spatic.
+ * Global application state for PlaceDesk.
  *
  * Owns the canonical state model:
  *   City -> Division -> Layers -> Layer Data -> Layer Filters -> Search Query -> Map.

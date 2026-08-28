@@ -96,14 +96,14 @@ export function exportLocationsCsv(
         .join(","),
     )
     .join("\n");
-  download("spatic-locations.csv", "text/csv;charset=utf-8", `${header}\n${body}`);
+  download("placedesk-locations.csv", "text/csv;charset=utf-8", `${header}\n${body}`);
 }
 
 export function exportLocationsJson(
   rows: { location: LocationData }[],
 ) {
   download(
-    "spatic-locations.json",
+    "placedesk-locations.json",
     "application/json",
     JSON.stringify(rows.map((r) => r.location), null, 2),
   );
@@ -121,7 +121,7 @@ export function exportLocationsGeoJson(
     })),
   };
   download(
-    "spatic-locations.geojson",
+    "placedesk-locations.geojson",
     "application/geo+json",
     JSON.stringify(geojson, null, 2),
   );

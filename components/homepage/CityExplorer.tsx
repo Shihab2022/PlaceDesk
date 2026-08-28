@@ -35,7 +35,7 @@ export default function CityExplorer() {
           <span className="text-ink-500">Entire Markets.</span>
         </h2>
         <p className="mt-5 text-pretty text-base leading-relaxed text-ink-500">
-          Spatic is built around city and region datasets — switch location and
+          PlaceDesk is built around city and region datasets — switch location and
           the distribution of markets, categories, and clusters changes with it.
         </p>
       </div>

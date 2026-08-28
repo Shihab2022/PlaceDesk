@@ -9,7 +9,8 @@ import {
   FiSearch,
   FiShare2,
 } from "react-icons/fi";
-import BrandLogo from "./BrandLogo";
+import PlaceDeskLogo from "./PlaceDeskLogo";
+import ThemeToggle from "../theme/ThemeToggle";
 
 interface HeaderProps {
   onOpenSearch: () => void;
@@ -30,15 +31,7 @@ export default function Header({
     <header className="relative z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line bg-white px-3 sm:px-4">
       {/* Brand */}
       <div className="flex items-center gap-2.5">
-        <BrandLogo size={34} />
-        <div className="hidden items-baseline gap-2 sm:flex">
-          <span className="text-[17px] font-semibold tracking-tight text-ink-900">
-            PlaceDesk
-          </span>
-          <span className="text-[11px] font-medium text-ink-400">
-            Location Intelligence Platform
-          </span>
-        </div>
+        <PlaceDeskLogo variant="compact" size={34} className="shrink-0" />
       </div>
 
       <div className="mx-1 hidden h-6 w-px bg-line sm:block" />
@@ -74,14 +67,16 @@ export default function Header({
         <button
           type="button"
           onClick={onExport}
-          aria-label="Export data"
-          title="Export data"
+          aria-label="Export map as image"
+          title="Export map as image"
           className="focusable hidden items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink-700 transition-all hover:-translate-y-px hover:border-brand-300 hover:text-brand-700 sm:flex"
         >
-          <FiDownload className="h-3.5 w-3.5" /> Export
+          <FiDownload className="h-3.5 w-3.5" /> Export Map
         </button>
 
         <div className="mx-1 hidden h-6 w-px bg-line lg:block" />
+
+        <ThemeToggle />
 
         <button
           type="button"

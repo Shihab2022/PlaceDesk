@@ -1,0 +1,91 @@
+// PlaceDesk — relational database schema (PostgreSQL via Prisma).
+// The user provides DATABASE_URL later; this schema is the source of truth
+// for auth, saved maps and the location intelligence workspace.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ANALYST
+  ADMIN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String?
+  lastName      String?
+  passwordHash  String?
+  organization  String?
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions  Session[]
+  savedMaps SavedMap[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model Category {
+  id        String @id @default(cuid())
+  key       String @unique // electronics, food, medical, ...
+  label     String
+  color     String?
+
+  locations Location[]
+}
+
+model Location {
+  id            String   @id
+  name          String
+  latitude      Float
+  longitude     Float
+  categoryKey   String
+  category      Category @relation(fields: [categoryKey], references: [key])
+  subCategories String?
+  pincode       String?
+  type          String?
+  address       String?
+  townName      String?
+  brandName     String?
+  numberOfVotes Int      @default(0)
+  serviceOptions String?
+  costForTwo    Float    @default(0)
+  cityId        String
+
+  @@index([categoryKey])
+  @@index([latitude, longitude])
+}
+
+model SavedMap {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  cityId        String
+  mapStyleId    String    @default("streets")
+  viewport      Json
+  layers        Json
+  filters       Json
+  searchState   Json?
+  favorite      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+}
