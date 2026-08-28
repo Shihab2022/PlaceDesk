@@ -118,6 +118,23 @@ body {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
 }
+@keyframes pulse-soft {
+  0% { transform: scale(0.85); opacity: 0.5; }
+  60% { transform: scale(1.6); opacity: 0; }
+  100% { opacity: 0; }
+}
+@keyframes drift {
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(8px, -6px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+@keyframes dash-flow {
+  to { stroke-dashoffset: -20; }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
 
 .anim-fade-in { animation: fade-in 0.2s ease-out both; }
 .anim-fade-up { animation: fade-up 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -125,6 +142,49 @@ body {
 .anim-fade-scale { animation: fade-scale 0.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .anim-pulse-ring { animation: pulse-ring 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 .anim-float { animation: float 6s ease-in-out infinite; }
+.anim-pulse-soft { animation: pulse-soft 3.2s ease-in-out infinite; }
+.anim-drift { animation: drift 14s ease-in-out infinite; }
+.anim-glow { animation: glow-pulse 3s ease-in-out infinite; }
+.dash-flow {
+  stroke-dasharray: 3 3;
+  animation: dash-flow 2.4s linear infinite;
+}
+
+/* Cursor-follow spatial glow (homepage hero) */
+.spatial-glow {
+  pointer-events: none;
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(124, 77, 255, 0.22) 0%,
+    rgba(124, 77, 255, 0.05) 45%,
+    transparent 70%
+  );
+  filter: blur(2px);
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease;
+}
+.spatial-glow.hidden-glow {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-float,
+  .anim-drift,
+  .anim-glow,
+  .anim-pulse-soft,
+  .dash-flow {
+    animation: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 .stagger > * {
   animation: fade-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;

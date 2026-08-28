@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PlaceDesk — Location Intelligence Platform",
+  title: "Spatic — Location Intelligence Platform",
   description:
-    "Explore geographic data, create map layers, filter businesses, and discover market patterns with PlaceDesk.",
-  applicationName: "PlaceDesk",
+    "Spatic turns geographic data into spatial intelligence. Explore locations, create map layers, filter businesses, and discover market patterns in one intelligent workspace.",
+  applicationName: "Spatic",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
