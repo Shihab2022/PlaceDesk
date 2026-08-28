@@ -34,24 +34,24 @@ export default function ProblemSection() {
         <p className="mt-5 text-pretty text-base leading-relaxed text-ink-500">
           Organizations hold enormous amounts of geographic data — but raw
           coordinates and spreadsheets rarely reveal where demand concentrates,
-          where competitors cluster, which areas are underserved, or how
-          markets differ from one another.
+          where competitors cluster, which areas are underserved, or how markets
+          differ from one another.
         </p>
       </div>
 
       <div className="mt-14 grid items-stretch gap-6 lg:grid-cols-[1fr_auto_1fr]">
         {/* Raw data */}
         <Reveal>
-          <div className="h-full rounded-2xl border border-line bg-white p-7">
+          <div className="h-full rounded-2xl border border-line p-7">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-ink-400">
-              <span className="h-2 w-2 rounded-full bg-ink-400" />
+              <span className="h-2 w-2 rounded-full " />
               Raw Location Data
             </div>
             <div className="mt-5 flex flex-wrap gap-2">
               {RAW.map((t) => (
                 <span
                   key={t}
-                  className="rounded-lg border border-line bg-canvas px-3 py-1.5 text-sm text-ink-500"
+                  className="rounded-lg border border-line px-3 py-1.5 text-sm text-ink-500"
                 >
                   {t}
                 </span>
@@ -62,12 +62,14 @@ export default function ProblemSection() {
 
         {/* arrow */}
         <div className="flex items-center justify-center" aria-hidden="true">
-          <span className="text-2xl text-brand-500 lg:rotate-0 rotate-90">⟶</span>
+          <span className="text-2xl text-brand-500 lg:rotate-0 rotate-90">
+            ⟶
+          </span>
         </div>
 
         {/* Intelligence */}
         <Reveal delay={120}>
-          <div className="relative h-full overflow-hidden rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 to-white p-7">
+          <div className="relative h-full overflow-hidden rounded-2xl border border-brand-200 bg-linear-to-br from-brand-50 to-white p-7">
             <div className="coordinate-grid absolute inset-0 opacity-70" />
             <div className="relative flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brand-700">
               <span className="h-2 w-2 rounded-full bg-brand-600 shadow-[0_0_8px_rgba(124,77,255,0.7)]" />

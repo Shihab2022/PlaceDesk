@@ -20,7 +20,7 @@ function FunnelRow() {
             {d[0]}
           </span>
           <div
-            className="flex h-8 min-w-[40px] items-center justify-center rounded-lg bg-brand-600/15 transition-all duration-500 hover:bg-brand-600/25"
+            className="flex h-8 min-w-10 items-center justify-center rounded-lg bg-brand-600/15 transition-all duration-500 hover:bg-brand-600/25"
             style={{ width: `${(d[2] as number) * 0.9}%` }}
           >
             <span className="text-xs font-bold text-brand-800">{d[1]}</span>
@@ -78,7 +78,9 @@ export default function Capabilities() {
             title="Understand Markets"
             text="See where businesses, services, customers, and opportunities are concentrated across a region."
             index="01"
-            visual={<LocationNodes className="h-full w-full" pointCount={420} />}
+            visual={
+              <LocationNodes className="h-full w-full" pointCount={420} />
+            }
           />
         </Reveal>
         <Reveal delay={80} className="lg:col-span-5">
@@ -107,7 +109,12 @@ export default function Capabilities() {
                   ))}
                   <div
                     className="absolute flex items-center justify-center rounded-lg bg-brand-600 text-xs font-bold text-white shadow-md"
-                    style={{ width: "140px", height: "30px", left: "10px", top: "116px" }}
+                    style={{
+                      width: "140px",
+                      height: "30px",
+                      left: "10px",
+                      top: "116px",
+                    }}
                   >
                     = Spatial Market
                   </div>
@@ -130,7 +137,9 @@ export default function Capabilities() {
             title="Discover Patterns"
             text="Spot clusters, density, distribution, and geographic relationships that are invisible in raw data."
             index="04"
-            visual={<LocationNodes className="h-full w-full" pointCount={420} />}
+            visual={
+              <LocationNodes className="h-full w-full" pointCount={420} />
+            }
           />
         </Reveal>
       </div>

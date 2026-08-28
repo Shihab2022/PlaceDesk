@@ -23,9 +23,7 @@ export default function ProductIntro() {
         <div className="mt-14 flex flex-col items-center gap-2 sm:flex-row sm:items-stretch sm:gap-0">
           {STEPS.map((s, i) => (
             <div key={s} className="flex flex-1 flex-col items-center">
-              <div
-                className="flex h-16 w-full max-w-[120px] flex-col items-center justify-center rounded-xl border border-line bg-white text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-md"
-              >
+              <div className="flex h-16 w-full max-w-30 flex-col items-center justify-center rounded-xl border border-line bg-white text-center shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-300 hover:shadow-md">
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">
                   Step {i + 1}
                 </span>

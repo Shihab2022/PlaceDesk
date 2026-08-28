@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import {
@@ -37,14 +38,16 @@ function systemPref(): "light" | "dark" {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     if (typeof window === "undefined") return "light";
-    const saved = (localStorage.getItem(STORAGE_KEY) as ThemeMode | null) || "light";
+    const saved =
+      (localStorage.getItem(STORAGE_KEY) as ThemeMode | null) || "light";
     return saved;
   });
   const [system, setSystem] = useState<"light" | "dark">(systemPref);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => setSystem(e.matches ? "dark" : "light");
+    const handler = (e: MediaQueryListEvent) =>
+      setSystem(e.matches ? "dark" : "light");
     setSystem(mq.matches ? "dark" : "light");
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
@@ -77,7 +80,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [theme, resolved, setTheme, toggle],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export function useTheme(): ThemeContextValue {

@@ -6,11 +6,31 @@ import SpatialGrid from "@/components/spatial/SpatialGrid";
 import GeographicNetwork from "@/components/spatial/GeographicNetwork";
 
 const STAGES = [
-  { label: "Locations", caption: "Thousands of raw points", note: "12,842 locations plotted" },
-  { label: "Categories", caption: "Point clouds organize by type", note: "Retail · Food · Healthcare · Education …" },
-  { label: "Layers", caption: "Datasets stack into layers", note: "Each layer keeps its own data & style" },
-  { label: "Patterns", caption: "Clusters and density emerge", note: "Markets begin to reveal themselves" },
-  { label: "Intelligence", caption: "The signal becomes clear", note: "From locations to intelligence" },
+  {
+    label: "Locations",
+    caption: "Thousands of raw points",
+    note: "12,842 locations plotted",
+  },
+  {
+    label: "Categories",
+    caption: "Point clouds organize by type",
+    note: "Retail · Food · Healthcare · Education …",
+  },
+  {
+    label: "Layers",
+    caption: "Datasets stack into layers",
+    note: "Each layer keeps its own data & style",
+  },
+  {
+    label: "Patterns",
+    caption: "Clusters and density emerge",
+    note: "Markets begin to reveal themselves",
+  },
+  {
+    label: "Intelligence",
+    caption: "The signal becomes clear",
+    note: "From locations to intelligence",
+  },
 ];
 
 /**
@@ -36,7 +56,9 @@ export default function DataTransformation() {
   // advance while visible (reduced motion: static)
   useEffect(() => {
     if (!inView) return;
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
     if (reduce) return;
     const t = setInterval(() => {
       setStage((s) => (s + 1) % STAGES.length);
@@ -48,7 +70,10 @@ export default function DataTransformation() {
 
   return (
     <Section className="py-20 sm:py-28">
-      <div ref={ref} className="overflow-hidden rounded-3xl border border-line bg-white shadow-xl shadow-ink-900/5">
+      <div
+        ref={ref}
+        className="overflow-hidden rounded-3xl border border-line bg-white shadow-xl shadow-ink-900/5"
+      >
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line/60 bg-canvas/50 px-6 py-4">
           <div className="flex items-center gap-3">
             <Eyebrow>The signature view</Eyebrow>
@@ -73,7 +98,7 @@ export default function DataTransformation() {
 
         <div className="relative grid gap-0 lg:grid-cols-[1.1fr_1fr]">
           {/* visualization */}
-          <div className="relative min-h-[320px] overflow-hidden">
+          <div className="relative min-h-80 overflow-hidden">
             <SpatialGrid />
             <div
               className="absolute inset-0 transition-all duration-700"
@@ -82,7 +107,11 @@ export default function DataTransformation() {
                 filter: stage >= 3 ? "none" : "blur(1px)",
               }}
             >
-              <GeographicNetwork className="h-full w-full" count={44} showLabels={stage >= 3} />
+              <GeographicNetwork
+                className="h-full w-full"
+                count={44}
+                showLabels={stage >= 3}
+              />
             </div>
             <div className="absolute left-4 top-4 rounded-lg bg-white/85 px-3 py-1.5 font-mono text-xs text-ink-500 shadow-sm ring-1 ring-black/5">
               {cur.note}

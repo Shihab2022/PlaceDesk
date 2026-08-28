@@ -1,4 +1,5 @@
-﻿"use client";
+﻿/* eslint-disable react-hooks/exhaustive-deps */
+"use client";
 
 /**
  * Global application state for PlaceDesk.
@@ -18,7 +19,7 @@ import {
   useRef,
   useState,
 } from "react";
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import {
   CATEGORIES,
   CATEGORY_FILTERS,
@@ -43,10 +44,7 @@ import {
   isBangladeshDivisionCity,
 } from "../data/bd/divisions";
 import { resolveStreetViewProvider } from "../services/streetViewProvider";
-import {
-  DEFAULT_VIZ_SETTINGS,
-  VISUALIZATIONS,
-} from "./VisualizationSettings";
+import { DEFAULT_VIZ_SETTINGS } from "./VisualizationSettings";
 import type {
   VisualizationId,
   VisualizationSettings,
@@ -179,7 +177,11 @@ export interface AppState {
   setMapThemeId: (m: MapThemeId) => void;
   viewState: MapViewState;
   setViewState: (v: MapViewState) => void;
-  setViewport: (v: { longitude: number; latitude: number; zoom: number }) => void;
+  setViewport: (v: {
+    longitude: number;
+    latitude: number;
+    zoom: number;
+  }) => void;
 
   /* layers */
   layers: ComputedLayer[];
@@ -206,7 +208,10 @@ export interface AppState {
   /* selection */
   selectedLocation: LocationData | null;
   selectedLocationLayerId: string | null;
-  setSelectedLocation: (loc: LocationData | null, layerId?: string | null) => void;
+  setSelectedLocation: (
+    loc: LocationData | null,
+    layerId?: string | null,
+  ) => void;
 
   /* search */
   searchQuery: string;
@@ -286,16 +291,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     cityRef.current = cityId;
   }, [cityId]);
 
-  const patch = useCallback(
-    (updater: (ls: LayerState[]) => LayerState[]) => {
-      setLayers((prev) => {
-        const next = updater(prev);
-        layersRef.current = next;
-        return next;
-      });
-    },
-    [],
-  );
+  const patch = useCallback((updater: (ls: LayerState[]) => LayerState[]) => {
+    setLayers((prev) => {
+      const next = updater(prev);
+      layersRef.current = next;
+      return next;
+    });
+  }, []);
 
   const loadOne = useCallback(
     async (id: string) => {
@@ -305,7 +307,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       patch((ls) =>
         ls.map((l) =>
           l.id === id
-            ? { ...l, loading: true, error: undefined, data: [], dataLoaded: false }
+            ? {
+                ...l,
+                loading: true,
+                error: undefined,
+                data: [],
+                dataLoaded: false,
+              }
             : l,
         ),
       );
@@ -318,7 +326,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         patch((ls) =>
           ls.map((l) =>
             l.id === id
-              ? { ...l, loading: false, data, dataLoaded: true, filteredData: data }
+              ? {
+                  ...l,
+                  loading: false,
+                  data,
+                  dataLoaded: true,
+                  filteredData: data,
+                }
               : l,
           ),
         );
@@ -330,7 +344,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
               ? {
                   ...l,
                   loading: false,
-                  error: e instanceof Error ? e.message : "Failed to load dataset",
+                  error:
+                    e instanceof Error ? e.message : "Failed to load dataset",
                 }
               : l,
           ),
@@ -372,7 +387,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       filters: {},
       vizSettings: cloneVizSettings(DEFAULT_VIZ_SETTINGS),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -391,7 +405,6 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       })),
     );
     layersRef.current.forEach((l) => void loadOne(l.id));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cityId]);
 
   const addLayer = useCallback(
@@ -442,24 +455,37 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [pushLayer, cityId],
   );
 
-  const removeLayer = useCallback((id: string) => {
-    patch((ls) => ls.filter((l) => l.id !== id));
-  }, [patch]);
+  const removeLayer = useCallback(
+    (id: string) => {
+      patch((ls) => ls.filter((l) => l.id !== id));
+    },
+    [patch],
+  );
 
-  const toggleVisible = useCallback((id: string) => {
-    patch((ls) =>
-      ls.map((l) => (l.id === id ? { ...l, visible: !l.visible } : l)),
-    );
-  }, [patch]);
+  const toggleVisible = useCallback(
+    (id: string) => {
+      patch((ls) =>
+        ls.map((l) => (l.id === id ? { ...l, visible: !l.visible } : l)),
+      );
+    },
+    [patch],
+  );
 
-  const renameLayer = useCallback((id: string, name: string) => {
-    patch((ls) => ls.map((l) => (l.id === id ? { ...l, name } : l)));
-  }, [patch]);
+  const renameLayer = useCallback(
+    (id: string, name: string) => {
+      patch((ls) => ls.map((l) => (l.id === id ? { ...l, name } : l)));
+    },
+    [patch],
+  );
 
   const updateVisualization = useCallback(
     (id: string, viz: VisualizationId) => {
       patch((ls) =>
-        ls.map((l) => (l.id === id ? { ...l, visualizationType: viz as VisualizationType } : l)),
+        ls.map((l) =>
+          l.id === id
+            ? { ...l, visualizationType: viz as VisualizationType }
+            : l,
+        ),
       );
     },
     [patch],
@@ -488,7 +514,10 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           l.id === id
             ? {
                 ...l,
-                vizSettings: { ...(l.vizSettings ?? DEFAULT_VIZ_SETTINGS), ...p } as VisualizationSettings,
+                vizSettings: {
+                  ...(l.vizSettings ?? DEFAULT_VIZ_SETTINGS),
+                  ...p,
+                } as VisualizationSettings,
               }
             : l,
         ),
@@ -504,9 +533,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     [patch],
   );
 
-  const clearFilters = useCallback((id: string) => {
-    patch((ls) => ls.map((l) => (l.id === id ? { ...l, filters: {} } : l)));
-  }, [patch]);
+  const clearFilters = useCallback(
+    (id: string) => {
+      patch((ls) => ls.map((l) => (l.id === id ? { ...l, filters: {} } : l)));
+    },
+    [patch],
+  );
 
   const reloadLayer = useCallback((id: string) => void loadOne(id), [loadOne]);
 
@@ -561,7 +593,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const computedLayers: ComputedLayer[] = useMemo(() => {
     return layers.map((l) => {
       const defs = CATEGORY_FILTERS[l.categoryKey] ?? [];
-      const filteredData = l.dataLoaded ? applyFilters(l.data, l.filters, defs) : [];
+      const filteredData = l.dataLoaded
+        ? applyFilters(l.data, l.filters, defs)
+        : [];
       return { ...l, filteredData };
     });
   }, [layers]);
@@ -625,8 +659,12 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
 
   const clearSearch = useCallback(() => setSearchQuery(""), []);
 
-  const [selectedLocation, setSelectedLocState] = useState<LocationData | null>(null);
-  const [selectedLocationLayerId, setSelectedLocationLayerId] = useState<string | null>(null);
+  const [selectedLocation, setSelectedLocState] = useState<LocationData | null>(
+    null,
+  );
+  const [selectedLocationLayerId, setSelectedLocationLayerId] = useState<
+    string | null
+  >(null);
   const setSelectedLocation = useCallback(
     (loc: LocationData | null, layerId: string | null = null) => {
       setSelectedLocState(loc);
@@ -636,7 +674,9 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   );
 
   /* saved */
-  const [savedProjects, setSavedProjects] = useState<SavedProject[]>(() => seedSaved());
+  const [savedProjects, setSavedProjects] = useState<SavedProject[]>(() =>
+    seedSaved(),
+  );
 
   const saveCurrent = useCallback(
     (name: string) => {
@@ -656,12 +696,18 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           (s, l) =>
             s +
             (l.dataLoaded
-              ? countActiveFilters(CATEGORY_FILTERS[l.categoryKey] ?? [], l.filters, l.data)
+              ? countActiveFilters(
+                  CATEGORY_FILTERS[l.categoryKey] ?? [],
+                  l.filters,
+                  l.data,
+                )
               : 0),
           0,
         ),
         theme:
-          mapThemeId === "dark" || mapThemeId === "satellite-streets" ? "dark" : "light",
+          mapThemeId === "dark" || mapThemeId === "satellite-streets"
+            ? "dark"
+            : "light",
         updated: new Date().toISOString(),
       };
       setSavedProjects((p) => [proj, ...p]);
@@ -709,8 +755,14 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           dataLoaded: false,
           loading: true,
           visible: ls.visible,
-          visualizationType: (ls.visualization as VisualizationType) ?? "scatter",
-          appearance: { color: ls.color ?? cat.color, opacity: 80, radius: 8, lineWidth: 2 },
+          visualizationType:
+            (ls.visualization as VisualizationType) ?? "scatter",
+          appearance: {
+            color: ls.color ?? cat.color,
+            opacity: 80,
+            radius: 8,
+            lineWidth: 2,
+          },
           filters: {},
           vizSettings: cloneVizSettings(DEFAULT_VIZ_SETTINGS),
         });
@@ -722,7 +774,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
   const dataSources: DataSource[] = useMemo(() => seedDataSources(), []);
 
   const [streetViewOpen, setStreetViewOpen] = useState(false);
-  const [streetViewRequest, setStreetViewRequest] = useState<StreetViewRequest | null>(null);
+  const [streetViewRequest, setStreetViewRequest] =
+    useState<StreetViewRequest | null>(null);
   const streetViewAvailable = useMemo(
     () => resolveStreetViewProvider().result.available,
     [],
@@ -890,7 +943,8 @@ function cityFromId(id: string): CityDef {
 
 function seedSaved(): SavedProject[] {
   const now = new Date();
-  const ago = (h: number) => new Date(now.getTime() - h * 3600_000).toISOString();
+  const ago = (h: number) =>
+    new Date(now.getTime() - h * 3600_000).toISOString();
   return [
     {
       id: "proj-seed-1",
@@ -898,12 +952,48 @@ function seedSaved(): SavedProject[] {
       cityId: "dhaka",
       mapStyleId: "dark",
       layers: [
-        { id: "x1", categoryKey: "malls", color: "#5B2FBF", visualization: "scatter", visible: true },
-        { id: "x2", categoryKey: "food", color: "#F97316", visualization: "heatmap", visible: true },
-        { id: "x3", categoryKey: "electronics", color: "#7C4DFF", visualization: "cluster", visible: true },
-        { id: "x4", categoryKey: "education", color: "#22C55E", visualization: "scatter", visible: true },
-        { id: "x5", categoryKey: "medical", color: "#EF4444", visualization: "icon", visible: true },
-        { id: "x6", categoryKey: "fashion", color: "#EC4899", visualization: "scatter", visible: true },
+        {
+          id: "x1",
+          categoryKey: "malls",
+          color: "#5B2FBF",
+          visualization: "scatter",
+          visible: true,
+        },
+        {
+          id: "x2",
+          categoryKey: "food",
+          color: "#F97316",
+          visualization: "heatmap",
+          visible: true,
+        },
+        {
+          id: "x3",
+          categoryKey: "electronics",
+          color: "#7C4DFF",
+          visualization: "cluster",
+          visible: true,
+        },
+        {
+          id: "x4",
+          categoryKey: "education",
+          color: "#22C55E",
+          visualization: "scatter",
+          visible: true,
+        },
+        {
+          id: "x5",
+          categoryKey: "medical",
+          color: "#EF4444",
+          visualization: "icon",
+          visible: true,
+        },
+        {
+          id: "x6",
+          categoryKey: "fashion",
+          color: "#EC4899",
+          visualization: "scatter",
+          visible: true,
+        },
       ],
       filterCounts: 12,
       theme: "dark",
@@ -916,8 +1006,20 @@ function seedSaved(): SavedProject[] {
       cityId: "bengaluru",
       mapStyleId: "streets",
       layers: [
-        { id: "y1", categoryKey: "food", color: "#F97316", visualization: "cluster", visible: true },
-        { id: "y2", categoryKey: "fitness", color: "#84CC16", visualization: "scatter", visible: true },
+        {
+          id: "y1",
+          categoryKey: "food",
+          color: "#F97316",
+          visualization: "cluster",
+          visible: true,
+        },
+        {
+          id: "y2",
+          categoryKey: "fitness",
+          color: "#84CC16",
+          visualization: "scatter",
+          visible: true,
+        },
       ],
       filterCounts: 3,
       theme: "light",
@@ -929,8 +1031,20 @@ function seedSaved(): SavedProject[] {
       cityId: "bd-chattogram",
       mapStyleId: "satellite-streets",
       layers: [
-        { id: "z1", categoryKey: "transport", color: "#10B981", visualization: "hexagon", visible: true },
-        { id: "z2", categoryKey: "companies", color: "#6366F1", visualization: "scatter", visible: true },
+        {
+          id: "z1",
+          categoryKey: "transport",
+          color: "#10B981",
+          visualization: "hexagon",
+          visible: true,
+        },
+        {
+          id: "z2",
+          categoryKey: "companies",
+          color: "#6366F1",
+          visualization: "scatter",
+          visible: true,
+        },
       ],
       filterCounts: 5,
       theme: "dark",
@@ -975,7 +1089,8 @@ function seedDataSources(): DataSource[] {
       name: "PostgreSQL Connection",
       type: "PostgreSQL",
       status: "Disabled",
-      description: "Connect a PostgreSQL endpoint to ingest your own location data.",
+      description:
+        "Connect a PostgreSQL endpoint to ingest your own location data.",
     },
     {
       id: "ds-mongo",
@@ -996,7 +1111,8 @@ function seedDataSources(): DataSource[] {
       name: "CSV Upload",
       type: "CSV",
       status: "Available",
-      description: "Drop a CSV with lat/lng columns to create a new layer on the fly.",
+      description:
+        "Drop a CSV with lat/lng columns to create a new layer on the fly.",
     },
     {
       id: "ds-geojson",

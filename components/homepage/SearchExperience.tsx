@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Reveal, Section, Eyebrow } from "./util";
+import { Reveal, Section } from "./util";
 import SpatialGrid from "@/components/spatial/SpatialGrid";
 import LocationNodes from "@/components/spatial/LocationNodes";
 
@@ -54,8 +54,7 @@ export default function SearchExperience() {
           Global search
         </p>
         <h2 className="mt-4 text-balance text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
-          Ask Your Map{" "}
-          <span className="text-ink-500">a Question.</span>
+          Ask Your Map <span className="text-ink-500">a Question.</span>
         </h2>
         <p className="mt-5 text-pretty text-base leading-relaxed text-ink-500">
           Search across locations, categories, brands, types, towns, and
@@ -94,12 +93,13 @@ export default function SearchExperience() {
                 </button>
               ))}
               <p className="mt-2 px-2 text-[11px] text-ink-400">
-                Searches names, categories, brands, types, towns, addresses &amp; pincodes.
+                Searches names, categories, brands, types, towns, addresses
+                &amp; pincodes.
               </p>
             </div>
 
             {/* result visual */}
-            <div className="relative min-h-[240px] overflow-hidden border-t border-line/60 bg-canvas/40 md:border-l md:border-t-0">
+            <div className="relative min-h-60 overflow-hidden border-t border-line/60 bg-canvas/40 md:border-l md:border-t-0">
               <SpatialGrid />
               <div key={q} className="absolute inset-0 anim-fade-up">
                 <LocationNodes className="h-full w-full" pointCount={380} />

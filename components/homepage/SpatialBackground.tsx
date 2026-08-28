@@ -1,17 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
+import SpatialGrid from "@/components/spatial/SpatialGrid";
 
-/**
- * SpatialBackground — a cohesive deep-spatial canvas used globally so every
- * homepage section lives in the same world:
- *    subtle purple/violet atmospheric glow
- *  + fine geographic coordinate grid
- *  + low-opacity drifting location nodes
- *
- * Rendered once behind the page; content sits on top. Respects
- * prefers-reduced-motion.
- */
 export default function SpatialBackground({
   density = 40,
   className = "",
@@ -35,7 +26,7 @@ export default function SpatialBackground({
   return (
     <div
       aria-hidden="true"
-      className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${className}`}
+      className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden ${className}`}
     >
       {/* atmospheric glow */}
       <div
@@ -45,8 +36,16 @@ export default function SpatialBackground({
             "radial-gradient(ellipse at 18% 12%, rgba(124,77,255,0.10), transparent 45%), radial-gradient(ellipse at 82% 28%, rgba(139,92,246,0.09), transparent 42%), radial-gradient(ellipse at 50% 110%, rgba(167,139,250,0.12), transparent 55%)",
         }}
       />
-      {/* coordinate grid */}
-      <SvgGrid />
+      <div
+        className="absolute inset-0 -z-10"
+        style={{
+          background:
+            "radial-gradient(ellipse at 50% 120%, rgba(124,77,255,0.16), transparent 60%)",
+        }}
+      />
+      <div className="absolute inset-0 -z-10 opacity-60">
+        <SpatialGrid />
+      </div>
       {/* contour rings */}
       <svg
         className="absolute inset-0 h-full w-full"
@@ -78,25 +77,5 @@ export default function SpatialBackground({
         />
       ))}
     </div>
-  );
-}
-
-/** Reusable fine coordinate grid (exported for pockets of the page too). */
-export function SvgGrid() {
-  return (
-    <svg
-      className="absolute inset-0 h-full w-full"
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-    >
-      <g stroke="rgba(124,77,255,0.05)" strokeWidth="0.07">
-        {Array.from({ length: 12 }).map((_, i) => (
-          <line key={`v${i}`} x1={i * 8.3} x2={i * 8.3} y1="0" y2="100" />
-        ))}
-        {Array.from({ length: 12 }).map((_, i) => (
-          <line key={`h${i}`} x1="0" x2="100" y1={i * 8.3} y2={i * 8.3} />
-        ))}
-      </g>
-    </svg>
   );
 }

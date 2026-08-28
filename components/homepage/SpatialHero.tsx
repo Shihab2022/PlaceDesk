@@ -52,14 +52,11 @@ export default function SpatialHero() {
       ref={ref}
       onMouseMove={onMove}
       onMouseLeave={() => setGlow((g) => ({ ...g, shown: false }))}
-      className="relative overflow-hidden rounded-2xl border border-line bg-gradient-to-b from-white to-brand-50/40 shadow-xl shadow-ink-900/5"
+      className="relative overflow-hidden rounded-2xl border border-line  shadow-xl shadow-ink-900/5"
     >
       <SpatialGrid />
       <div className="absolute inset-0">
-        <LocationNodes
-          className="h-full w-full"
-          pointCount={650}
-        />
+        <LocationNodes className="h-full w-full" pointCount={650} />
       </div>
 
       {/* cursor glow */}
@@ -93,7 +90,9 @@ export default function SpatialHero() {
               {live ? "LOCATION DETECTED" : "SPATIAL SIGNAL"}
             </span>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-semibold text-ink-900">{c.title}</span>
+              <span className="text-sm font-semibold text-ink-900">
+                {c.title}
+              </span>
               <span className="text-lg font-bold" style={{ color: c.color }}>
                 {c.value}
               </span>

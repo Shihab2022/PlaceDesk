@@ -29,14 +29,17 @@ export default function Header() {
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "border-b border-line/70 bg-white/85 backdrop-blur-xl"
+          ? "border-b border-transparent  bg-white/85 backdrop-blur-xl"
           : "border-b border-transparent bg-transparent"
       }`}
     >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-6 sm:px-8">
         {/* Brand */}
         <a href="#top" className="group flex items-center gap-2.5">
-          <BrandLogo size={34} className="transition-transform duration-300 group-hover:scale-105" />
+          <BrandLogo
+            size={34}
+            className="transition-transform duration-300 group-hover:scale-105"
+          />
           <span className="flex flex-col leading-none">
             <span className="text-[17px] font-semibold tracking-tight text-ink-900">
               PlaceDesk
@@ -63,17 +66,26 @@ export default function Header() {
         {/* Actions */}
         <div className="hidden items-center gap-2 sm:flex">
           <Link
-            href="/dashboard"
+            href="/login"
             className="focusable rounded-lg px-3.5 py-2 text-sm font-medium text-ink-700 transition-colors hover:text-brand-800"
           >
-            Sign In
+            Login
+          </Link>
+          <Link
+            href="/register"
+            className="focusable group inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/30 transition-all duration-200 hover:-translate-y-px hover:bg-brand-800 hover:shadow-md hover:shadow-brand-600/30"
+          >
+            Register
           </Link>
           <Link
             href="/dashboard"
             className="focusable group inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-brand-600/30 transition-all duration-200 hover:-translate-y-px hover:bg-brand-800 hover:shadow-md hover:shadow-brand-600/30"
           >
             Explore PlaceDesk
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5">
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-0.5"
+            >
               →
             </span>
           </Link>
@@ -88,7 +100,15 @@ export default function Header() {
           className="focusable flex h-10 w-10 items-center justify-center rounded-lg text-ink-700 hover:bg-brand-50 lg:hidden"
         >
           <span className="sr-only">Menu</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
             {open ? (
               <path d="M6 6l12 12M18 6L6 18" />
             ) : (

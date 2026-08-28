@@ -24,13 +24,17 @@ export default function ThemeToggle({
   useEffect(() => {
     if (!open) return;
     const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     };
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  const dark = theme === "dark" || (theme === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+  const dark =
+    theme === "dark" ||
+    (theme === "system" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
 
   return (
     <div ref={ref} className={`relative ${className}`}>
@@ -43,7 +47,11 @@ export default function ThemeToggle({
         title="Theme"
         className="focusable flex h-9 w-9 items-center justify-center rounded-lg text-ink-500 transition-colors hover:bg-canvas hover:text-ink-900"
       >
-        {dark ? <FiMoon className="h-[18px] w-[18px]" /> : <FiSun className="h-[18px] w-[18px]" />}
+        {dark ? (
+          <FiMoon className="h-4.5 w-4.5" />
+        ) : (
+          <FiSun className="h-4.5 w-4.5" />
+        )}
       </button>
       {open && (
         <div
@@ -63,7 +71,9 @@ export default function ThemeToggle({
                   setOpen(false);
                 }}
                 className={`focusable w-full rounded-lg px-2.5 py-1.5 text-left text-[12px] transition-colors ${
-                  on ? "bg-brand-50 font-semibold text-brand-800" : "text-ink-600 hover:bg-canvas"
+                  on
+                    ? "bg-brand-50 font-semibold text-brand-800"
+                    : "text-ink-600 hover:bg-canvas"
                 }`}
               >
                 {m.label}
