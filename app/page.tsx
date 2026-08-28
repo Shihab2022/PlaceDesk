@@ -2,32 +2,33 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  FiBarChart2,
-  FiChevronsRight,
-} from "react-icons/fi";
-import Header from "@/components/spatic/layout/Header";
-import Sidebar from "@/components/spatic/layout/Sidebar";
-import ProjectBar from "@/components/spatic/layout/ProjectBar";
-import LayerList from "@/components/spatic/layers/LayerList";
-import LayerPanel from "@/components/spatic/layers/LayerPanel";
-import MapControls from "@/components/spatic/map/MapControls";
-import MapLegend from "@/components/spatic/map/MapLegend";
-import type { ViewState } from "@/components/spatic/map/MapView";
-import AnalyticsDrawer, { DrawerSlice } from "@/components/spatic/analytics/AnalyticsDrawer";
-import LocationDetails from "@/components/spatic/modals/LocationDetails";
-import StreetViewModal from "@/components/spatic/modals/StreetViewModal";
-import WorkspaceSection from "@/components/spatic/layout/WorkspaceSection";
-import GlobalSearch from "@/components/spatic/search/GlobalSearch";
-import AddDatasetModal from "@/components/spatic/modals/AddDatasetModal";
+import { FiBarChart2, FiChevronsRight } from "react-icons/fi";
+import Header from "@/components/placeDesk/layout/Header";
+import Sidebar from "@/components/placeDesk/layout/Sidebar";
+import ProjectBar from "@/components/placeDesk/layout/ProjectBar";
+import LayerList from "@/components/placeDesk/layers/LayerList";
+import LayerPanel from "@/components/placeDesk/layers/LayerPanel";
+import MapControls from "@/components/placeDesk/map/MapControls";
+import MapLegend from "@/components/placeDesk/map/MapLegend";
+import type { ViewState } from "@/components/placeDesk/map/MapView";
+import AnalyticsDrawer, {
+  DrawerSlice,
+} from "@/components/placeDesk/analytics/AnalyticsDrawer";
+import LocationDetails from "@/components/placeDesk/modals/LocationDetails";
+import StreetViewModal from "@/components/placeDesk/modals/StreetViewModal";
+import ShareModal from "@/components/placeDesk/modals/ShareModal";
+import ExportMenu from "@/components/placeDesk/modals/ExportMenu";
+import WorkspaceSection from "@/components/placeDesk/layout/WorkspaceSection";
+import GlobalSearch from "@/components/placeDesk/search/GlobalSearch";
+import AddDatasetModal from "@/components/placeDesk/modals/AddDatasetModal";
 import {
   AppStoreProvider,
   useAppStore,
-} from "@/components/spatic/app/AppStoreContext";
-import { CITIES, MAP_THEMES } from "@/components/spatic/data";
-import type { CityDef } from "@/components/spatic/data";
+} from "@/components/placeDesk/app/AppStoreContext";
+import { CITIES, MAP_THEMES } from "@/components/placeDesk/data";
+import type { CityDef } from "@/components/placeDesk/data";
 
-const DynamicMap = dynamic(() => import("@/components/spatic/map/MapView"), {
+const DynamicMap = dynamic(() => import("@/components/placeDesk/map/MapView"), {
   ssr: false,
   loading: () => <MapSkeleton />,
 });
@@ -60,6 +61,8 @@ function Workspace() {
   const [drawerExpanded, setDrawerExpanded] = useState(false);
   const [panelOpen, setPanelOpen] = useState(true);
   const [saved, setSaved] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
 
   /* ---- City + multi-layer architecture ---- */
   const store = useAppStore();
@@ -74,7 +77,6 @@ function Workspace() {
     if (!layers.some((l) => l.id === activeId)) {
       store.setActiveId(layers[0]?.id ?? null);
     }
-
   }, [layers, activeId, store.setActiveId]);
 
   /* Recenter the map when the city changes */
@@ -96,7 +98,6 @@ function Workspace() {
         e.preventDefault();
         setSearchOpen((v) => !v);
       }
-
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -159,12 +160,15 @@ function Workspace() {
 
   const mapStyle = theme.style;
 
-  const zoomBy = useCallback((dir: number) => {
-    store.setViewState({
-      ...store.viewState,
-      zoom: Math.min(16, Math.max(3, store.viewState.zoom + dir)),
-    });
-  }, [store.setViewState, store.viewState]);
+  const zoomBy = useCallback(
+    (dir: number) => {
+      store.setViewState({
+        ...store.viewState,
+        zoom: Math.min(16, Math.max(3, store.viewState.zoom + dir)),
+      });
+    },
+    [store.setViewState, store.viewState],
+  );
 
   const locateMe = useCallback(() => {
     store.setViewState({
@@ -192,7 +196,11 @@ function Workspace() {
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-canvas text-ink-900">
-      <Header onOpenSearch={() => setSearchOpen(true)} />
+      <Header
+        onOpenSearch={() => setSearchOpen(true)}
+        onShare={() => setShareOpen(true)}
+        onExport={() => setExportOpen((v) => !v)}
+      />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <Sidebar
@@ -211,9 +219,6 @@ function Workspace() {
             onSave={() => setSaved(true)}
             saved={saved}
           />
-          {navActive !== "maps" && (
-            <WorkspaceSection section={navActive} city={city} onNavigate={setNavActive} />
-          )}
           {navActive !== "maps" && (
             <WorkspaceSection
               section={navActive}
@@ -239,16 +244,12 @@ function Workspace() {
                 panelOpen ? "translate-x-0" : "-translate-x-full"
               }`}
             >
-              <LayerList
-              />
+              <LayerList />
 
               {/* Active layer configuration */}
               {activeLayer ? (
                 <div className="flex min-h-0 flex-[1_1_50%] flex-col border-t border-line">
-                  <LayerPanel
-                    layer={activeLayer}
-                    cityLabel={city.label}
-                  />
+                  <LayerPanel layer={activeLayer} cityLabel={city.label} />
                 </div>
               ) : (
                 <div className="border-t border-line px-4 py-6 text-center text-[12px] text-ink-400">
@@ -262,7 +263,14 @@ function Workspace() {
               <div className="absolute inset-0">
                 <DynamicMap
                   layers={layers}
-                  selected={store.selectedLocation && store.selectedLocationLayerId ? { layerId: store.selectedLocationLayerId, locId: store.selectedLocation.id } : null}
+                  selected={
+                    store.selectedLocation && store.selectedLocationLayerId
+                      ? {
+                          layerId: store.selectedLocationLayerId,
+                          locId: store.selectedLocation.id,
+                        }
+                      : null
+                  }
                   viewState={viewState as ViewState}
                   onViewState={store.setViewState}
                   onSelect={(layerId, loc) =>
@@ -272,9 +280,12 @@ function Workspace() {
                 />
               </div>
 
-                            {/* Floating controls (right) */}
+              {/* Floating controls (right) */}
               <div className="pointer-events-none absolute inset-y-2 right-2 z-20 flex flex-col items-end gap-2.5">
-                <MapLegend layers={layers} onSelect={(id) => store.setActiveId(id)} />
+                <MapLegend
+                  layers={layers}
+                  onSelect={(id) => store.setActiveId(id)}
+                />
 
                 <div className="pointer-events-auto mt-auto flex flex-col items-end gap-2.5">
                   <MapControls
@@ -288,14 +299,18 @@ function Workspace() {
                       if (activeLayer) store.setActiveId(activeLayer.id);
                     }}
                     mapThemeId={store.mapThemeId}
-                    onMapThemeChange={(id) => store.setMapThemeId(id as typeof store.mapThemeId)}
+                    onMapThemeChange={(id) =>
+                      store.setMapThemeId(id as typeof store.mapThemeId)
+                    }
                   />
 
                   {/* Mobile: toggle left panel */}
                   <button
                     type="button"
                     onClick={() => setPanelOpen((v) => !v)}
-                    aria-label={panelOpen ? "Close data panel" : "Open data panel"}
+                    aria-label={
+                      panelOpen ? "Close data panel" : "Open data panel"
+                    }
                     title={panelOpen ? "Close data panel" : "Open data panel"}
                     className="focusable flex h-10 w-10 items-center justify-center rounded-xl bg-white/90 text-ink-500 shadow-lg shadow-ink-900/10 ring-1 ring-black/5 backdrop-blur transition-all hover:text-brand-700 lg:hidden"
                   >
@@ -339,12 +354,17 @@ function Workspace() {
                 districtsCovered={districtCounts.length}
               />
             </div>
-
           </div>
         </main>
       </div>
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {shareOpen && <ShareModal onClose={() => setShareOpen(false)} />}
+      {exportOpen && (
+        <div className="fixed right-24 top-[52px] z-[60]">
+          <ExportMenu onClose={() => setExportOpen(false)} />
+        </div>
+      )}
       <AddDatasetModal
         open={addDatasetOpen}
         onClose={() => setAddDatasetOpen(false)}

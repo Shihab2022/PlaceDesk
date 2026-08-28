@@ -4,17 +4,26 @@ import { useState } from "react";
 import {
   FiBell,
   FiChevronDown,
+  FiDownload,
   FiHelpCircle,
   FiSearch,
+  FiShare2,
 } from "react-icons/fi";
 import BrandLogo from "./BrandLogo";
 
 interface HeaderProps {
   onOpenSearch: () => void;
+  onShare?: () => void;
+  onExport?: () => void;
   usage?: number; // 0-100
 }
 
-export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
+export default function Header({
+  onOpenSearch,
+  onShare,
+  onExport,
+  usage = 64,
+}: HeaderProps) {
   const [userOpen, setUserOpen] = useState(false);
 
   return (
@@ -24,7 +33,7 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
         <BrandLogo size={34} />
         <div className="hidden items-baseline gap-2 sm:flex">
           <span className="text-[17px] font-semibold tracking-tight text-ink-900">
-            Spatic
+            PlaceDesk
           </span>
           <span className="text-[11px] font-medium text-ink-400">
             Location Intelligence Platform
@@ -49,21 +58,30 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
           ⌘K
         </kbd>
         <FiChevronDown className="h-3.5 w-3.5 text-ink-400" />
-</button>
+      </button>
 
       {/* Right cluster */}
       <div className="flex shrink-0 items-center gap-1">
-        <div
-          className="mr-1 hidden items-center gap-2 px-2 py-1.5 lg:flex"
-          title="64% of plan quota used this month"
+        <button
+          type="button"
+          onClick={onShare}
+          aria-label="Share map"
+          title="Share map"
+          className="focusable hidden items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink-700 transition-all hover:-translate-y-px hover:border-brand-300 hover:text-brand-700 sm:flex"
         >
-          <div className="h-1.5 w-16 overflow-hidden rounded-full bg-line">
-            <div
-              className="h-full rounded-full bg-brand-600 transition-all"
-              style={{ width: `${usage}%` }}
-            />
-          </div>
-        </div>
+          <FiShare2 className="h-3.5 w-3.5" /> Share
+        </button>
+        <button
+          type="button"
+          onClick={onExport}
+          aria-label="Export data"
+          title="Export data"
+          className="focusable hidden items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink-700 transition-all hover:-translate-y-px hover:border-brand-300 hover:text-brand-700 sm:flex"
+        >
+          <FiDownload className="h-3.5 w-3.5" /> Export
+        </button>
+
+        <div className="mx-1 hidden h-6 w-px bg-line lg:block" />
 
         <button
           type="button"
@@ -84,7 +102,7 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-brand-600 ring-2 ring-white" />
         </button>
 
-      <div className="mx-1 hidden h-6 w-px bg-line sm:block" />
+        <div className="mx-1 hidden h-6 w-px bg-line sm:block" />
 
         {/* User / avatar */}
         <div className="relative">
@@ -102,7 +120,9 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
               <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />
             </div>
             <div className="hidden text-left leading-tight sm:block">
-              <div className="text-[12px] font-semibold text-ink-900">Sarah Johnson</div>
+              <div className="text-[12px] font-semibold text-ink-900">
+                Sarah Johnson
+              </div>
               <div className="text-[10px] text-ink-400">Data Analyst</div>
             </div>
             <FiChevronDown className="hidden h-3.5 w-3.5 text-ink-400 sm:block" />
@@ -119,20 +139,26 @@ export default function Header({ onOpenSearch, usage = 64 }: HeaderProps) {
                 className="anim-fade-scale absolute right-0 top-full z-20 mt-2 w-52 overflow-hidden rounded-xl border border-line bg-white shadow-xl shadow-ink-900/10"
               >
                 <div className="border-b border-line px-3 py-2.5">
-                  <div className="text-[12px] font-semibold text-ink-900">Sarah Johnson</div>
-                  <div className="text-[11px] text-ink-400">sarah@spatic.io</div>
+                  <div className="text-[12px] font-semibold text-ink-900">
+                    Sarah Johnson
+                  </div>
+                  <div className="text-[11px] text-ink-400">
+                    sarah@placeDesk.io
+                  </div>
                 </div>
-                {["Account", "Billing", "Preferences", "Sign out"].map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    role="menuitem"
-                    onClick={() => setUserOpen(false)}
-                    className="focusable block w-full px-3 py-2 text-left text-[13px] text-ink-700 transition-colors hover:bg-canvas"
-                  >
-                    {item}
-                  </button>
-                ))}
+                {["Account", "Billing", "Preferences", "Sign out"].map(
+                  (item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => setUserOpen(false)}
+                      className="focusable block w-full px-3 py-2 text-left text-[13px] text-ink-700 transition-colors hover:bg-canvas"
+                    >
+                      {item}
+                    </button>
+                  ),
+                )}
               </div>
             </>
           )}

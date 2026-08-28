@@ -10,7 +10,7 @@ import {
   FiNavigation,
   FiPlus,
 } from "react-icons/fi";
-import { IconTip } from "../../spatic/ui";
+import { IconTip } from "../ui";
 import { MAP_THEMES } from "../data";
 
 interface MapControlsProps {
@@ -66,7 +66,10 @@ export default function MapControls({
           <FiLayers className="h-4 w-4" />
         </Btn>
         <div className="relative">
-          <Btn label="Map style" onClick={() => setStyleOpen((value) => !value)}>
+          <Btn
+            label="Map style"
+            onClick={() => setStyleOpen((value) => !value)}
+          >
             <FiMoon className="h-4 w-4" />
           </Btn>
           {styleOpen && (
@@ -88,7 +91,9 @@ export default function MapControls({
                       : "text-ink-700 hover:bg-canvas"
                   }`}
                 >
-                  <span className={`h-2 w-2 rounded-full ${mapThemeId === theme.id ? "bg-brand-600" : "bg-line"}`} />
+                  <span
+                    className={`h-2 w-2 rounded-full ${mapThemeId === theme.id ? "bg-brand-600" : "bg-line"}`}
+                  />
                   {theme.label}
                 </button>
               ))}

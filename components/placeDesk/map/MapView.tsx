@@ -3,12 +3,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo } from "react";
 import DeckGL from "@deck.gl/react";
-import { ScatterplotLayer } from "@deck.gl/layers";
+import { ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { HeatmapLayer, HexagonLayer } from "@deck.gl/aggregation-layers";
 import Map from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { ComputedLayer, LocationData } from "../data";
 import { useAppStore } from "../app/AppStoreContext";
+import { DEFAULT_VIZ_SETTINGS } from "../app/VisualizationSettings";
+import type {
+  VisualizationId,
+  VisualizationSettings,
+} from "../app/VisualizationSettings";
 
 type Position = [number, number, number];
 
@@ -52,6 +57,41 @@ function esc(s: unknown): string {
 
 const getPosition = (d: LocationData): Position => [d.lng, d.lat, 0];
 
+/** Normalize internal/legacy visualization ids to the canonical set. */
+function normViz(v: string): VisualizationId {
+  if (v === "point") return "scatter";
+  if (v === "bubble") return "icon";
+  const known: VisualizationId[] = ["scatter", "icon", "heatmap", "cluster", "hexagon", "density"];
+  return known.includes(v as VisualizationId) ? (v as VisualizationId) : "scatter";
+}
+
+const GRADIENT_COLORS: Record<string, [number, number, number][]> = {
+  purple: [
+    [237, 233, 254],
+    [167, 139, 250],
+    [124, 77, 255],
+    [91, 47, 191],
+  ],
+  viridis: [
+    [253, 231, 37],
+    [68, 208, 120],
+    [33, 144, 141],
+    [68, 1, 84],
+  ],
+  warm: [
+    [254, 243, 199],
+    [249, 115, 22],
+    [180, 60, 20],
+    [124, 45, 18],
+  ],
+  cool: [
+    [207, 250, 254],
+    [6, 182, 212],
+    [40, 70, 170],
+    [30, 58, 138],
+  ],
+};
+
 export default function MapView({
   layers,
   selected,
@@ -68,25 +108,35 @@ export default function MapView({
       const data = l.filteredData;
       if (data.length === 0) continue;
       const rgb = hexToRgb(l.appearance.color);
-      const op = l.appearance.opacity / 100;
-      const r = l.appearance.radius;
-      const bw = Math.max(1, l.appearance.lineWidth);
-      const selectedId = selected?.layerId === l.id ? selected.locId : null;
+      const mutedFill: [number, number, number] = [180, 185, 195];
       const searchActive = store.hasActiveSearch;
       const isMatch = (d: LocationData) =>
         !searchActive || store.matchingIds.has(d.id);
+      const selectedId = selected?.layerId === l.id ? selected.locId : null;
+      const settings: VisualizationSettings = l.vizSettings ?? DEFAULT_VIZ_SETTINGS;
+      const viz = normViz(l.visualizationType);
 
-      if (l.visualizationType === "heatmap") {
+      /* ---- Heatmap ---- */
+      if (viz === "heatmap") {
+        const hm = settings.heatmap;
+        const weightFn =
+          hm.weight === "cost"
+            ? (d: LocationData) => (d.cost_for_two || 0) / 400
+            : hm.weight === "votes"
+              ? (d: LocationData) => 1 + (d.number_of_votes || 0) / 600
+              : (d: LocationData) => 1;
         out.push(
           new HeatmapLayer({
             id: `${l.id}-heat`,
             data,
             pickable: false,
-            opacity: op * 0.9,
+            opacity: (hm.opacity / 100) * 0.95,
             getPosition,
-            getWeight: (d: LocationData) => 1 + (d.number_of_votes || 0) / 600,
-            radiusPixels: 22 + r * 1.5,
-            threshold: 0.04,
+            getWeight: weightFn,
+            radiusPixels: hm.radius,
+            intensity: hm.intensity,
+            colorRange: GRADIENT_COLORS[hm.gradient] ?? GRADIENT_COLORS.purple,
+            threshold: 0.03,
           }),
         );
         out.push(
@@ -96,14 +146,14 @@ export default function MapView({
             pickable: true,
             stroked: true,
             filled: true,
-            opacity: Math.min(op, 0.9),
+            opacity: Math.min(hm.opacity / 100, 0.9),
             radiusMinPixels: 2.5,
             radiusMaxPixels: 30,
-            getRadius: (d: LocationData) => (d.id === selectedId ? r * 1.6 : r * 0.55),
-            lineWidthMinPixels: bw,
+            getRadius: (d: LocationData) => (d.id === selectedId ? 8 : 3),
+            lineWidthMinPixels: 1,
             getFillColor: (d: LocationData) =>
-              isMatch(d) ? [255, 255, 255, 230] : [180, 185, 195, 90],
-            getLineColor: (d: LocationData) => (isMatch(d) ? rgb : [150, 155, 165]),
+              isMatch(d) ? [255, 255, 255, 230] : [...mutedFill, 90],
+            getLineColor: (d: LocationData) => (isMatch(d) ? rgb : mutedFill),
             getPosition,
             onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
           }),
@@ -111,18 +161,20 @@ export default function MapView({
         continue;
       }
 
-      if (l.visualizationType === "hexagon") {
+      /* ---- Hexagon ---- */
+      if (viz === "hexagon") {
         out.push(
           new HexagonLayer({
             id: `${l.id}-hex`,
             data,
             pickable: true,
             extruded: true,
-            opacity: op * 0.8,
+            opacity: (l.appearance.opacity / 100) * 0.8,
             radius: 650,
-            elevationScale: 6 + r / 3,
+            elevationScale: 6 + l.appearance.radius / 3,
             getPosition,
-            getColor: () => [...rgb, 220],
+            getColor: (d: LocationData) =>
+              isMatch(d) ? [...rgb, 220] : [...mutedFill, 160],
             getElevationValue: (pts: LocationData[]) => pts.length,
             onClick: (info: any) =>
               info.object?.points?.[0] && onSelect(l.id, info.object.points[0]),
@@ -131,8 +183,67 @@ export default function MapView({
         continue;
       }
 
-      // point | cluster | density | bubble → halo + core markers
-      if (l.visualizationType !== "density") {
+      /* ---- Icon (TextLayer glyphs) ---- */
+      if (viz === "icon") {
+        const icon = settings.icon;
+        const iconRgb = hexToRgb(icon.color);
+        out.push(
+          new TextLayer({
+            id: `${l.id}-icon`,
+            data,
+            pickable: true,
+            opacity: icon.opacity / 100,
+            getPosition,
+            getText: () => icon.glyph,
+            getSize: icon.size,
+            sizeUnits: "pixels",
+            getAngle: icon.rotation,
+            getColor: (d: LocationData) => (isMatch(d) ? iconRgb : mutedFill),
+            getTextAnchor: "middle" as "middle",
+            getAlignmentBaseline: "center" as "center",
+            onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
+          }),
+        );
+        continue;
+      }
+
+      /* ---- Scatter / Cluster / Density ---- */
+      const isScatter = viz === "scatter";
+      const isCluster = viz === "cluster";
+      const isDensity = viz === "density";
+
+      let fillColor: [number, number, number];
+      let lineColor: [number, number, number];
+      let radiusPx: number;
+      let lineWidthPx: number;
+      let opacity: number;
+      let halo: { radius: number; fill: [number, number, number] } | null = null;
+
+      if (isScatter) {
+        const sc = settings.scatter;
+        fillColor = hexToRgb(sc.fillColor);
+        lineColor = hexToRgb(sc.borderColor);
+        radiusPx = sc.pointSize;
+        lineWidthPx = Math.max(0.5, sc.borderWidth);
+        opacity = sc.opacity / 100;
+        halo = { radius: radiusPx * 1.25, fill: fillColor };
+      } else if (isCluster) {
+        const cl = settings.cluster;
+        fillColor = hexToRgb(cl.color);
+        lineColor = hexToRgb(cl.color);
+        radiusPx = Math.max(4, cl.clusterRadius / 12);
+        lineWidthPx = 1.5;
+        opacity = cl.opacity / 100;
+        halo = { radius: radiusPx * 1.5, fill: fillColor };
+      } else {
+        fillColor = rgb;
+        lineColor = rgb;
+        radiusPx = l.appearance.radius;
+        lineWidthPx = Math.max(1, l.appearance.lineWidth);
+        opacity = (l.appearance.opacity / 100) * 0.75;
+      }
+
+      if (halo && !isDensity) {
         out.push(
           new ScatterplotLayer({
             id: `${l.id}-halo`,
@@ -140,11 +251,12 @@ export default function MapView({
             pickable: false,
             stroked: false,
             filled: true,
-            opacity: op,
-            radiusMinPixels: r * 1.9,
+            opacity: opacity,
+            radiusMinPixels: halo.radius,
             radiusMaxPixels: 110,
-            getRadius: () => r * 1.25,
-            getFillColor: () => [...rgb, 28],
+            getRadius: () => halo!.radius,
+            getFillColor: (d: LocationData) =>
+              isMatch(d) ? [...halo!.fill, 28] : [...mutedFill, 20],
             getPosition,
           }),
         );
@@ -155,37 +267,34 @@ export default function MapView({
           id: `${l.id}-core`,
           data,
           pickable: true,
-          stroked: l.visualizationType !== "density",
-          filled: l.visualizationType !== "bubble",
-          opacity: l.visualizationType === "density" ? op * 0.75 : op,
-          radiusMinPixels: 3,
+          stroked: !isDensity,
+          filled: true,
+          opacity,
+          radiusMinPixels: 2,
           radiusMaxPixels: 60,
-          getRadius: (d: LocationData) => {
-            if (l.visualizationType === "cluster") {
-              // fake-aggregate look: slightly larger dots
-              return d.id === selectedId ? r * 1.6 : r * 0.85 + 2;
-            }
-            if (l.visualizationType === "bubble") {
-              const base = (d.number_of_votes || 0) > 400 ? r * 1.7 : (d.number_of_votes || 0) > 100 ? r * 1.15 : r * 0.7;
-              return d.id === selectedId ? base * 1.35 : base;
-            }
-            return d.id === selectedId ? r * 1.5 : r;
-          },
-          lineWidthMinPixels: bw,
+          getRadius: (d: LocationData) =>
+            d.id === selectedId ? radiusPx * 1.35 : radiusPx,
+          lineWidthMinPixels: lineWidthPx,
           getFillColor: (d: LocationData) =>
             isMatch(d)
-              ? l.visualizationType === "density"
-                ? [...rgb, 120]
-                : [255, 255, 255, 225]
-              : [180, 185, 195, 70],
-          getLineColor: (d: LocationData) => (isMatch(d) ? rgb : [150, 155, 165]),
+              ? isDensity || isCluster
+                ? [...fillColor, 200]
+                : [255, 255, 255, 230]
+              : [...mutedFill, 70],
+          getLineColor: (d: LocationData) => (isMatch(d) ? lineColor : mutedFill),
           getPosition,
           onClick: (info: any) => info.object && onSelect(l.id, info.object as LocationData),
         }),
       );
     }
     return out;
-  }, [layers, selected, onSelect, store.hasActiveSearch, store.matchingIds]);
+  }, [
+    layers,
+    selected,
+    onSelect,
+    store.hasActiveSearch,
+    store.matchingIds,
+  ]);
 
   return (
     <div className="absolute inset-0">
