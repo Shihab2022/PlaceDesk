@@ -22,8 +22,6 @@ _Spatial analytics engine providing territory mapping, catchment-area calculatio
 - [🧱 Tech Stack](#-tech-stack)
 - [🏗️ Architecture](#-architecture)
 - [🔌 API Endpoints](#-api-endpoints)
-- [🚀 Getting Started](#-getting-started)
-- [📁 Project Structure](#-project-structure)
 - [🎯 Use Cases](#-use-cases)
 
 ---
@@ -93,11 +91,11 @@ PlaceDesk is an end-to-end **location-intelligence GIS workspace** that turns ra
 
 ## 🏙️ City & Region Coverage
 
-| City                                                                                                          | Data source                                                                                                                   |
-| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Delhi** (NCR)                                                                                               | 🎯 **Real dataset** — fetched live via `GET /api/pois?path=site_analysis_delhi/*.json` (GitHub-backed, auto-refreshed hourly) |
-| **Mumbai, Bengaluru, Hyderabad**                                                                              | Schema-identical deterministic mock data                                                                                      |
-| **Bangladesh** — all 8 divisions (Dhaka, Chattogram, Rajshahi, Khulna, Barishal, Sylhet, Rangpur, Mymensingh) | Deterministic generated POI data                                                                                              |
+| City                                                                                                          | Data source                                                                   |
+| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Delhi** (NCR)                                                                                               | 🎯 **Real dataset** — fetched live via (GitHub-backed, auto-refreshed hourly) |
+| **Mumbai, Bengaluru, Hyderabad**                                                                              | Schema-identical deterministic mock data                                      |
+| **Bangladesh** — all 8 divisions (Dhaka, Chattogram, Rajshahi, Khulna, Barishal, Sylhet, Rangpur, Mymensingh) | Deterministic generated POI data                                              |
 
 ## 📊 Analytics & Insights
 
@@ -107,18 +105,6 @@ PlaceDesk is an end-to-end **location-intelligence GIS workspace** that turns ra
 - Demographic **catchment area & drive-time spatial calculations** (advisory).
 
 ---
-
-## 🔐 Authentication
-
-Complete end-to-end auth flow (works without an external DB):
-
-- `/register` — create account
-- `/login` — sign in
-- `/forgot-password` / `/reset-password` — reset your password
-- Session tokens (7-day expiry), hashed passwords, `/api/auth/me` session restore
-- **Demo account:** `demo@placedesk.com` / `demo1234`
-
-> Auth store is in-memory for the demo; a Prisma/PostgreSQL schema (`prisma/schema.prisma` — `User`, `Session`, `Category`, `Location`, `SavedMap`) is ready for when `DATABASE_URL` is configured.
 
 ---
 
@@ -149,85 +135,6 @@ Complete end-to-end auth flow (works without an external DB):
 
 ---
 
-## 🔌 API Endpoints
-
-| Method | Endpoint                      | Purpose                                                                     |
-| ------ | ----------------------------- | --------------------------------------------------------------------------- |
-| `GET`  | `/api/pois?path=<file>`       | Fetch a city POI dataset from the GitHub repo (blob API, hourly revalidate) |
-| `POST` | `/api/auth/register`          | Create an account                                                           |
-| `POST` | `/api/auth/login`             | Sign in & issue session token                                               |
-| `POST` | `/api/auth/logout`            | Destroy session                                                             |
-| `GET`  | `/api/auth/me`                | Restore session / current user                                              |
-| `POST` | `/api/auth/forgot-password`   | Request password reset                                                      |
-| `POST` | `/api/auth/reset-password`    | Confirm password reset                                                      |
-| `POST` | `/api/gis/catchment-buffer`   | Spatial: catchment-area buffer calculation (advisory)                       |
-| `GET`  | `/api/gis/competitor-density` | Spatial: competitor-density heat (advisory)                                 |
-
----
-
-## 🚀 Getting Started
-
-Requirements: **Node.js 18+** and npm.
-
-```bash
-# 1. Install dependencies
-npm install
-
-# 2. Rename/create .env — see the table below
-```
-
-Environment variables:
-
-| Variable                           | Description                                |
-| ---------------------------------- | ------------------------------------------ |
-| `NEXT_PUBLIC_MAP_BOX_ACCESS_TOKEN` | Mapbox public access token                 |
-| `NEXT_PUBLIC_GOOGLE_MAPS_KEY`      | Google Maps key (Street View, etc.)        |
-| `GITHUB_TOKEN`                     | GitHub PAT (for `/api/pois` dataset fetch) |
-| `GITHUB_OWNER`                     | GitHub owner of the dataset repo           |
-| `GITHUB_REPO`                      | GitHub dataset repo                        |
-| `DATABASE_URL` (optional)          | PostgreSQL connection string (Prisma)      |
-
-```bash
-# 3. Run the dev server
-npm run dev
-# or
-yarn dev / pnpm dev / bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) — the marketing homepage links to **`/dashboard`**, the GIS workspace, sign in with the demo credentials.
-
-```bash
-npm run build     # production build
-npm run start     # serve production build
-npm run lint      # eslint
-```
-
----
-
-## 📁 Project Structure
-
-```text
-app/                          # Next.js App Router
-  page.tsx                    # Marketing homepage
-  dashboard/page.tsx          # GIS workspace — maps, layers, analytics
-  api/
-    pois/route.ts             # GitHub-backed POI dataset endpoint
-    auth/*.ts                 # register / login / logout / me / password reset
-components/
-  homepage/                   # Marketing sections (Hero → Footer)
-  placeDesk/                  # The GIS workspace
-    map/                      # MapView (Deck.gl + Mapbox), controls, legend
-    layers/                   # Layer list + layer configuration panel
-    analytics/                # Analytics drawer, market overview
-    modals/                   # Share, Export, AddDataset, LocationDetails, StreetView
-    search/                   # Global search (⌘K) palette
-    services/                 # poiService, mapState (share/export), streetViewProvider
-    data/                     # cities, layer config, filters, mock generator, BD divisions
-    app/                      # AppStoreContext, VisualizationSettings
-constant/                     # Map styles, layer config
-prisma/schema.prisma          # PostgreSQL schema (User, Session, Category, Location, SavedMap)
-```
-
 ---
 
 ## 🎯 Use Cases
@@ -242,8 +149,8 @@ PlaceDesk is built for decisions that depend on **where**:
 
 ---
 
-<div align="center">
+## 🎯 Url
 
-Live demo: <https://github.com/Shihab2022/PlaceDesk> · Workspace: `/dashboard` · GitHub: <https://place-desk-xi.vercel.app/>
-
-</div>
+- [Live demo:](https://github.com/Shihab2022/PlaceDesk)
+- [Workspace:](/dashboard)
+- [GitHub:](https://place-desk-xi.vercel.app/)

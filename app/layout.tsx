@@ -19,6 +19,14 @@ export const metadata: Metadata = {
   description:
     "PlaceDesk turns geographic data into spatial intelligence. Explore locations, create map layers, filter businesses, and discover market patterns in one intelligent workspace.",
   applicationName: "PlaceDesk",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48 64x64" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
