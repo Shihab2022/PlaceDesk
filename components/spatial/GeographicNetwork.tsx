@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/purity */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -33,13 +32,15 @@ export default function GeographicNetwork({
     ];
     for (let i = 0; i < count; i++) {
       const cl = clusters[i % clusters.length];
-      const ang = Math.random() * Math.PI * 2;
-      const rad = Math.random() * cl.k;
+      const seed = (i * 9301 + 49297) % 233280;
+      const next = (offset: number) => ((seed + offset * 7919) % 233280) / 233280;
+      const ang = next(1) * Math.PI * 2;
+      const rad = next(2) * cl.k;
       n.push({
         id: i,
         x: cl.cx + Math.cos(ang) * rad,
         y: cl.cy + Math.sin(ang) * rad,
-        r: 1.4 + Math.random() * 2.4,
+        r: 1.4 + next(3) * 2.4,
         c: PALETTE[i % PALETTE.length],
       });
     }

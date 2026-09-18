@@ -151,17 +151,28 @@ export function applyFilters(
       if (val === undefined || val === null) continue;
       const dv = def.accessor(loc);
       if (def.type === "select") {
-        if (String(val).length && String(dv) !== String(val)) return false;
+        if (String(val).trim().length && normalizeText(dv) !== normalizeText(val)) return false;
       } else if (def.type === "multiselect") {
         if (Array.isArray(val) && val.length) {
-          const list = Array.isArray(dv) ? dv : [String(dv)];
-          if (!val.some((x) => list.includes(String(x)))) return false;
+          const list = (Array.isArray(dv) ? dv : [dv]).map(normalizeText);
+          if (!val.some((x) => list.includes(normalizeText(x)))) return false;
         }
       } else if (def.type === "range" && Array.isArray(val)) {
-        const n = Number(dv) || 0;
-        if (n < (val[0] as number) || n > (val[1] as number)) return false;
+        const n = Number(dv);
+        const lower = Number(val[0]);
+        const upper = Number(val[1]);
+        if (!Number.isFinite(n) || !Number.isFinite(lower) || !Number.isFinite(upper)) {
+          return false;
+        }
+        if (n < lower) return false;
+        // Configured range limits are displayed as "max+" and therefore remain open-ended.
+        if (!(def.max !== undefined && upper >= def.max) && n > upper) return false;
       }
     }
     return true;
   });
+}
+
+function normalizeText(value: unknown): string {
+  return String(value ?? "").trim().toLocaleLowerCase();
 }

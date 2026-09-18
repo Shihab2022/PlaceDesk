@@ -100,9 +100,13 @@ function FilterRange({
   max: number;
   onPick: (v: [number, number]) => void;
 }) {
-  const cur: [number, number] = Array.isArray(value)
-    ? [(value[0] as number) || min, (value[1] as number) || max]
-    : [min, max];
+  const rawMin = Array.isArray(value) ? Number(value[0]) : min;
+  const rawMax = Array.isArray(value) ? Number(value[1]) : max;
+  const cur: [number, number] = [
+    Math.max(min, Math.min(max, Number.isFinite(rawMin) ? rawMin : min)),
+    Math.max(min, Math.min(max, Number.isFinite(rawMax) ? rawMax : max)),
+  ];
+  if (cur[0] > cur[1]) cur[0] = cur[1];
   const fmt = (v: number) => (def.format ? def.format(v) : String(v));
   return (
     <div>
@@ -127,7 +131,7 @@ function FilterRange({
           step={def.step ?? 1}
           value={cur[0]}
           onChange={(e) =>
-            onPick([Math.min(Number(e.target.value), cur[1] - (def.step ?? 1)), cur[1]])
+            onPick([Math.min(Number(e.target.value), cur[1]), cur[1]])
           }
           aria-label={`${def.label} (minimum)`}
           className="absolute inset-x-0 bottom-0 z-10 w-full"
@@ -139,7 +143,7 @@ function FilterRange({
           step={def.step ?? 1}
           value={cur[1]}
           onChange={(e) =>
-            onPick([cur[0], Math.max(Number(e.target.value), cur[0] + (def.step ?? 1))])
+            onPick([cur[0], Math.max(Number(e.target.value), cur[0])])
           }
           aria-label={`${def.label} (maximum)`}
           className="absolute inset-x-0 bottom-0 z-20 w-full"
@@ -166,12 +170,12 @@ export function FilterSet({
 }) {
   const set = (key: string, v: FilterValue) => {
     const next = { ...filters };
-    if (v === undefined || isEmpty(defs.find((d) => d.key === key), v)) delete next[key];
+    if (v === undefined || isEmpty(defs.find((d) => d.key === key), v, data)) delete next[key];
     else next[key] = v;
     onChange(next);
   };
 
-  const active = defs.filter((def) => !isEmpty(def, filters[def.key])).length;
+  const active = defs.filter((def) => !isEmpty(def, filters[def.key], data)).length;
 
   return (
     <div className="space-y-3.5">
@@ -231,10 +235,15 @@ export function FilterSet({
   );
 }
 
-function isEmpty(def: FilterDef | undefined, v: unknown): boolean {
+function isEmpty(def: FilterDef | undefined, v: unknown, data: LocationData[]): boolean {
   if (v === undefined) return true;
   if (def?.type === "select") return String(v).length === 0;
   if (def?.type === "multiselect") return Array.isArray(v) && v.length === 0;
+  if (def?.type === "range" && Array.isArray(v)) {
+    const min = def.min ?? 0;
+    const max = def.max ?? computeMax(def, data);
+    return Number(v[0]) <= min && Number(v[1]) >= max;
+  }
   return false;
 }
 

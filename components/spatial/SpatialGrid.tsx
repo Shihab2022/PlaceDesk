@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/purity */
 "use client";
 
 import { useMemo } from "react";
@@ -19,11 +18,13 @@ export default function SpatialGrid({
   const cells = useMemo(() => {
     const out: { x: number; y: number; s: number; d: number }[] = [];
     for (let i = 0; i < 18; i++) {
+      const seed = (i * 9301 + 49297) % 233280;
+      const next = (offset: number) => ((seed + offset * 7919) % 233280) / 233280;
       out.push({
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        s: 1 + Math.random() * 2.5,
-        d: Math.random() * 6,
+        x: next(1) * 100,
+        y: next(2) * 100,
+        s: 1 + next(3) * 2.5,
+        d: next(4) * 6,
       });
     }
     return out;

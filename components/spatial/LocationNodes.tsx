@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/purity */
 "use client";
 
 import { useMemo, useState } from "react";
@@ -44,14 +43,16 @@ export default function LocationNodes({
     const out: Pt[] = [];
     for (let i = 0; i < pointCount; i++) {
       const cl = COLLECTORS[i % COLLECTORS.length];
-      const a = Math.random() * Math.PI * 2;
-      const rad = Math.random() * cl.radius;
+      const seed = (i * 9301 + 49297) % 233280;
+      const next = (offset: number) => ((seed + offset * 7919) % 233280) / 233280;
+      const a = next(1) * Math.PI * 2;
+      const rad = next(2) * cl.radius;
       out.push({
         x: cl.x + Math.cos(a) * rad,
         y: cl.y + Math.sin(a) * rad,
         color: catColor(cl.key),
-        r: 0.5 + Math.random() * 1.1,
-        d: Math.random() * 8,
+        r: 0.5 + next(3) * 1.1,
+        d: next(4) * 8,
       });
     }
     return out;
