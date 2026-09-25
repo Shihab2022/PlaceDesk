@@ -8,7 +8,7 @@
 import { useMemo, useState } from "react";
 import type { ReportModel } from "./types";
 import { formatInt } from "./parse";
-import { EmptyState, SectionCard } from "./ui";
+import { EmptyState, PaginationBar, SectionCard } from "./ui";
 
 type SourceRow = Record<string, unknown>;
 
@@ -235,27 +235,12 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
       )}
 
       {pageCount > 1 && (
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={safePage === 0}
-            className="focusable rounded-lg border border-line px-3 py-1.5 text-[12px] font-medium text-ink-700 hover:bg-canvas disabled:opacity-40"
-          >
-            Previous
-          </button>
-          <span className="text-[12px] tabular-nums text-ink-500">
-            page {safePage + 1} / {pageCount}
-          </span>
-          <button
-            type="button"
-            onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-            disabled={safePage >= pageCount - 1}
-            className="focusable rounded-lg border border-line px-3 py-1.5 text-[12px] font-medium text-ink-700 hover:bg-canvas disabled:opacity-40"
-          >
-            Next
-          </button>
-        </div>
+        <PaginationBar
+          page={safePage}
+          totalItems={rows.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       )}
     </SectionCard>
   );

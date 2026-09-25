@@ -267,7 +267,7 @@ export interface ReportOption {
   lng: number | null;
 }
 
-/** Tabs of the report workspace. */
+/** Sections of the report workspace (all rendered on one page). */
 export type ReportTabId =
   | "overview"
   | "map"

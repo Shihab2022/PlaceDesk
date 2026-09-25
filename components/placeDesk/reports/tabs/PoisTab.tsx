@@ -2,14 +2,17 @@
 
 /** POI mix: category distribution, per-category highlights and top brands. */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ReportModel } from "../types";
 import { formatDecimal, formatInt, formatNumber, humanizeKey } from "../parse";
-import { EmptyState, KeyValueList, SectionCard } from "../ui";
+import { EmptyState, KeyValueList, PaginationBar, SectionCard } from "../ui";
 import { DonutChart } from "../charts";
+
+const CATEGORY_PAGE_SIZE = 10;
 
 export default function PoisTab({ model }: { model: ReportModel }) {
   const summary = model.poiSummary;
+  const [categoryPage, setCategoryPage] = useState(0);
 
   const sortedEntries = useMemo(() => {
     if (!summary) return [];
@@ -88,25 +91,36 @@ export default function PoisTab({ model }: { model: ReportModel }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
-              {sortedEntries.map((entry) => (
-                <tr key={entry.category} className="hover:bg-canvas/60">
-                  <td className="px-3 py-2 font-medium text-ink-900">
-                    {humanizeKey(entry.category)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-ink-700">
-                    {formatInt(entry.count)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-ink-500">
-                    {total > 0 ? ((entry.count / total) * 100).toFixed(1) : "0.0"}%
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums text-ink-700">
-                    {formatDecimal(entry.avgReviewsPerDay, 2)}
-                  </td>
-                </tr>
-              ))}
+              {sortedEntries
+                .slice(
+                  categoryPage * CATEGORY_PAGE_SIZE,
+                  (categoryPage + 1) * CATEGORY_PAGE_SIZE,
+                )
+                .map((entry) => (
+                  <tr key={entry.category} className="hover:bg-canvas/60">
+                    <td className="px-3 py-2 font-medium text-ink-900">
+                      {humanizeKey(entry.category)}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-ink-700">
+                      {formatInt(entry.count)}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-ink-500">
+                      {total > 0 ? ((entry.count / total) * 100).toFixed(1) : "0.0"}%
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-ink-700">
+                      {formatDecimal(entry.avgReviewsPerDay, 2)}
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
+        <PaginationBar
+          page={categoryPage}
+          totalItems={sortedEntries.length}
+          pageSize={CATEGORY_PAGE_SIZE}
+          onPageChange={setCategoryPage}
+        />
       </SectionCard>
 
       <div className="grid gap-4 lg:grid-cols-2">

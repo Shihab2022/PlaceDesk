@@ -25,6 +25,7 @@ export function Card({
 
 /** Collapsible white panel used for report sections. */
 export function SectionCard({
+  id,
   title,
   subtitle,
   actions,
@@ -32,6 +33,7 @@ export function SectionCard({
   children,
   className = "",
 }: {
+  id?: string;
   title: ReactNode;
   subtitle?: ReactNode;
   actions?: ReactNode;
@@ -43,7 +45,7 @@ export function SectionCard({
   const contentId = useId();
 
   return (
-    <section className={`rounded-xl border border-line bg-white ${className}`}>
+    <section id={id} className={`rounded-xl border border-line bg-white ${className}`}>
       <div className="flex items-start justify-between gap-3 px-4 pt-4 sm:px-5">
         <div className="min-w-0">
           <button
@@ -82,32 +84,101 @@ export function StatTile({
   value,
   hint,
   accent = false,
+  icon,
+  colorScheme = "brand",
 }: {
   label: string;
   value: string;
   hint?: string | null;
   accent?: boolean;
+  icon?: ReactNode;
+  colorScheme?: "brand" | "blue" | "emerald" | "amber" | "violet" | "rose" | "teal";
 }) {
+  const schemes: Record<string, { border: string; bg: string; iconBg: string; iconColor: string; valueColor: string }> = {
+    brand: {
+      border: "border-brand-200",
+      bg: "bg-linear-to-br from-brand-50/80 via-white to-brand-50/20",
+      iconBg: "bg-brand-100 text-brand-700",
+      iconColor: "text-brand-700",
+      valueColor: "text-brand-800",
+    },
+    blue: {
+      border: "border-blue-200",
+      bg: "bg-linear-to-br from-blue-50/80 via-white to-blue-50/20",
+      iconBg: "bg-blue-100 text-blue-700",
+      iconColor: "text-blue-700",
+      valueColor: "text-blue-900",
+    },
+    emerald: {
+      border: "border-emerald-200",
+      bg: "bg-linear-to-br from-emerald-50/80 via-white to-emerald-50/20",
+      iconBg: "bg-emerald-100 text-emerald-700",
+      iconColor: "text-emerald-700",
+      valueColor: "text-emerald-900",
+    },
+    amber: {
+      border: "border-amber-200",
+      bg: "bg-linear-to-br from-amber-50/80 via-white to-amber-50/20",
+      iconBg: "bg-amber-100 text-amber-700",
+      iconColor: "text-amber-700",
+      valueColor: "text-amber-900",
+    },
+    violet: {
+      border: "border-purple-200",
+      bg: "bg-linear-to-br from-purple-50/80 via-white to-purple-50/20",
+      iconBg: "bg-purple-100 text-purple-700",
+      iconColor: "text-purple-700",
+      valueColor: "text-purple-900",
+    },
+    rose: {
+      border: "border-rose-200",
+      bg: "bg-linear-to-br from-rose-50/80 via-white to-rose-50/20",
+      iconBg: "bg-rose-100 text-rose-700",
+      iconColor: "text-rose-700",
+      valueColor: "text-rose-900",
+    },
+    teal: {
+      border: "border-teal-200",
+      bg: "bg-linear-to-br from-teal-50/80 via-white to-teal-50/20",
+      iconBg: "bg-teal-100 text-teal-700",
+      iconColor: "text-teal-700",
+      valueColor: "text-teal-900",
+    },
+  };
+
+  const current = accent ? schemes[colorScheme] ?? schemes.brand : null;
+
   return (
     <div
-      className={`rounded-xl border p-4 transition-shadow hover:shadow-sm ${
-        accent
-          ? "border-brand-200 bg-brand-50/60"
-          : "border-line bg-white"
+      className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+        current
+          ? `${current.border} ${current.bg}`
+          : "border-line bg-white shadow-xs hover:border-brand-200"
       }`}
     >
-      <p className="truncate text-[11px] font-semibold uppercase tracking-wide text-ink-400">
-        {label}
-      </p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 truncate text-[11px] font-semibold uppercase tracking-wider text-ink-500">
+          {label}
+        </p>
+        {icon && (
+          <span
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+              current ? current.iconBg : "bg-canvas text-ink-500"
+            }`}
+          >
+            {icon}
+          </span>
+        )}
+      </div>
       <p
-        className={`mt-1.5 truncate text-[24px] font-semibold leading-tight ${
-          accent ? "text-brand-700" : "text-ink-900"
+        className={`mt-2 truncate text-[23px] font-bold tracking-tight leading-tight ${
+          current ? current.valueColor : "text-ink-900"
         }`}
         title={value}
       >
         {value}
       </p>
-      {hint && <p className="mt-0.5 truncate text-[11px] text-ink-500">{hint}</p>}
+      {hint && <p className="mt-1 truncate text-[11px] text-ink-500">{hint}</p>}
     </div>
   );
 }
@@ -233,47 +304,6 @@ export function ReportSkeleton() {
   );
 }
 
-/** Horizontal pill tabs (scrollable on small screens). */
-export function Tabs<T extends string>({
-  tabs,
-  active,
-  onChange,
-  ariaLabel = "Report sections",
-}: {
-  tabs: { id: T; label: string }[];
-  active: T;
-  onChange: (id: T) => void;
-  ariaLabel?: string;
-}) {
-  return (
-    <div
-      role="tablist"
-      aria-label={ariaLabel}
-      className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1"
-    >
-      {tabs.map((tab) => {
-        const isActive = tab.id === active;
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onChange(tab.id)}
-            className={`focusable shrink-0 rounded-lg px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
-              isActive
-                ? "bg-ink-900 text-white shadow-sm"
-                : "border border-line bg-white text-ink-500 hover:text-ink-900"
-            }`}
-          >
-            {tab.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 /**
  * Horizontal bar used by every ranked-list chart
  * (brand share, demand generators, POI mix, weights…).
@@ -329,4 +359,119 @@ export function BarRow({
   }
   return <div className="px-1 py-1.5">{body}</div>;
 }
+
+export function PaginationBar({
+  page,
+  totalItems,
+  pageSize,
+  onPageChange,
+  className = "",
+}: {
+  page: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  className?: string;
+}) {
+  const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
+  const safePage = Math.min(page, pageCount - 1);
+  const start = totalItems === 0 ? 0 : safePage * pageSize + 1;
+  const end = Math.min((safePage + 1) * pageSize, totalItems);
+
+  /* Uncontrolled number input: `key` remounts it whenever the page changes,
+     so no effect / derived-state juggling is required. */
+  const commitValue = (raw: string) => {
+    const parsed = Number.parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return;
+    const next = Math.min(Math.max(parsed, 1), pageCount) - 1;
+    if (next !== safePage) onPageChange(next);
+  };
+
+  if (pageCount <= 1 && totalItems <= pageSize) {
+    return null;
+  }
+
+  const navBtn =
+    "focusable inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-lg border border-line bg-white px-2 text-[11.5px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40";
+
+  return (
+    <div
+      className={`flex flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-3 text-[12px] ${className}`}
+    >
+      <span className="tabular-nums text-ink-500">
+        Showing <span className="font-semibold text-ink-800">{start}</span>–
+        <span className="font-semibold text-ink-800">{end}</span> of{" "}
+        <span className="font-semibold text-ink-800">
+          {totalItems.toLocaleString("en-US")}
+        </span>
+      </span>
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onPageChange(0)}
+          disabled={safePage === 0}
+          aria-label="First page"
+          title="First page"
+          className={navBtn}
+        >
+          «
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.max(0, safePage - 1))}
+          disabled={safePage === 0}
+          aria-label="Previous page"
+          className={navBtn}
+        >
+          Prev
+        </button>
+
+        <span className="flex items-center gap-1 px-0.5 text-ink-500">
+          <input
+            key={`page-${safePage}`}
+            type="number"
+            min={1}
+            max={pageCount}
+            defaultValue={safePage + 1}
+            onBlur={(e) => commitValue(e.currentTarget.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                commitValue(e.currentTarget.value);
+              }
+            }}
+            aria-label="Page number"
+            className="focusable h-7 w-12 rounded-lg border border-line bg-white px-1.5 text-center text-[11.5px] font-semibold tabular-nums text-ink-900"
+          />
+          <span className="tabular-nums">
+            / {pageCount.toLocaleString("en-US")}
+          </span>
+        </span>
+
+        <button
+          type="button"
+          onClick={() => onPageChange(Math.min(pageCount - 1, safePage + 1))}
+          disabled={safePage >= pageCount - 1}
+          aria-label="Next page"
+          className={navBtn}
+        >
+          Next
+        </button>
+        <button
+          type="button"
+          onClick={() => onPageChange(pageCount - 1)}
+          disabled={safePage >= pageCount - 1}
+          aria-label="Last page"
+          title="Last page"
+          className={navBtn}
+        >
+          »
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
 

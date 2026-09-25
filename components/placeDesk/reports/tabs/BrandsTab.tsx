@@ -15,11 +15,11 @@ import {
   formatNumber,
   humanizeKey,
 } from "../parse";
-import { EmptyState, SectionCard } from "../ui";
+import { EmptyState, PaginationBar, SectionCard } from "../ui";
 import { ScatterPlot } from "../charts";
 
 type SortKey = "reviews" | "performance" | "distance" | "votes" | "name";
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 export default function BrandsTab({
   model,
@@ -257,35 +257,14 @@ export default function BrandsTab({
           />
         )}
 
-        {pageCount > 1 && (
-          <div className="mt-3 flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
-              disabled={safePage === 0}
-              className="focusable rounded-lg border border-line px-3 py-1.5 text-[12px] font-medium text-ink-700 transition-colors hover:bg-canvas disabled:opacity-40"
-            >
-              Previous
-            </button>
-            <span className="text-[12px] tabular-nums text-ink-500">
-              {safePage * PAGE_SIZE + 1}–
-              {Math.min((safePage + 1) * PAGE_SIZE, filtered.length)} of{" "}
-              {formatInt(filtered.length)}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-              disabled={safePage >= pageCount - 1}
-              className="focusable rounded-lg border border-line px-3 py-1.5 text-[12px] font-medium text-ink-700 transition-colors hover:bg-canvas disabled:opacity-40"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <PaginationBar
+          page={safePage}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </SectionCard>
     </div>
   );
 }
-
-
 

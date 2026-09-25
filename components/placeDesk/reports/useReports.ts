@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { reportDataLayerConfig } from "@/constant/mapConfilg";
 import { getReportModel, reportKey } from "./normalize";
-import { toNumber, toText } from "./parse";
+import { parseJsonField, toNumber, toText } from "./parse";
 import type { RawReportPayload, ReportModel, ReportOption } from "./types";
 
 /* ------------------------------------------------------------------ */
@@ -56,6 +56,45 @@ function extractReports(json: unknown): RawReportPayload[] {
   return [];
 }
 
+/**
+ * Rough "how much data does this row carry" score.
+ *
+ * Sample files ship **two rows per site**: a lightweight summary and the full
+ * payload (thousands of brands/POIs/projects). Both share the same
+ * `report_id`, so the registry must keep the richer one — otherwise every
+ * section would render empty tables.
+ */
+function reportRichness(raw: RawReportPayload): number {
+  const len = (value: unknown): number => {
+    const parsed = parseJsonField<unknown>(value, null);
+    if (Array.isArray(parsed)) return parsed.length;
+    if (parsed && typeof parsed === "object") {
+      const obj = parsed as Record<string, unknown>;
+      if (Array.isArray(obj.data)) return obj.data.length;
+      if (Array.isArray(obj.pois)) return obj.pois.length;
+      if (Array.isArray(obj.projects)) return obj.projects.length;
+      return Object.keys(obj).length;
+    }
+    return 0;
+  };
+
+  return (
+    len(raw.top_brands) * 4 +
+    len(raw.pois) * 4 +
+    len(raw.competition) * 2 +
+    len(raw.projects) * 2 +
+    len(raw.high_streets) * 2 +
+    len(raw.shopping_malls) +
+    len(raw.apartments) +
+    len(raw.demand_generators) +
+    len(raw.grouped_indexes) +
+    len(raw.indexes_from_counts) +
+    len(raw.location_score_weights) +
+    len(raw.competitors_domains) +
+    Object.keys(raw).length
+  );
+}
+
 function registerReports(
   rows: RawReportPayload[],
   path: string,
@@ -63,14 +102,19 @@ function registerReports(
 ) {
   for (const raw of rows) {
     const key = reportKey(raw);
-    if (registry.has(key)) continue;
-    registry.set(key, {
+    const entry: RegistryEntry = {
       raw,
       key,
       reportId: toText(raw.report_id) ?? toText(raw.id) ?? key,
       path,
       sourceName,
-    });
+    };
+    const existing = registry.get(key);
+    // Keep whichever row carries more of the payload.
+    if (existing && reportRichness(existing.raw) >= reportRichness(raw)) {
+      continue;
+    }
+    registry.set(key, entry);
   }
 }
 
@@ -240,11 +284,13 @@ function makePendingOption(reportId: string, path: string, sourceName: string): 
   };
 }
 
-export function useReports(): UseReportsResult {
-  /* Pre-seed selection when the first configured report is already cached
-     (e.g. a revisit) — initial state, so no setState inside the effect. */
+export function useReports(initialReportId?: string | null): UseReportsResult {
+  /* Pre-seed selection when the report is already cached
+     (e.g. a revisit or explicit ID requested) — initial state, so no setState inside the effect. */
   const [initial] = useState(() => {
-    const cfg = reportDataLayerConfig[0];
+    const cfg = initialReportId
+      ? reportDataLayerConfig.find((c) => c.id === initialReportId) ?? reportDataLayerConfig[0]
+      : reportDataLayerConfig[0];
     if (!cfg) return null;
     const existing = [...registry.values()].find((e) => e.reportId === cfg.id);
     return existing
@@ -299,13 +345,15 @@ export function useReports(): UseReportsResult {
     [bump],
   );
 
-  /* Bootstrap: fetch the first configured report on first mount.
+  /* Bootstrap: fetch the target report on first mount.
      State updates live in the promise callbacks (async by nature). */
   useEffect(() => {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
 
-    const cfg = reportDataLayerConfig[0];
+    const cfg = initialReportId
+      ? reportDataLayerConfig.find((c) => c.id === initialReportId) ?? reportDataLayerConfig[0]
+      : reportDataLayerConfig[0];
     if (!cfg || initial) return;
     const option = makePendingOption(cfg.id, cfg.targetPath, cfg.name);
 
@@ -327,7 +375,7 @@ export function useReports(): UseReportsResult {
         setError(err instanceof Error ? err.message : String(err));
         setStatus("error");
       });
-  }, [initial]);
+  }, [initial, initialReportId]);
 
   const options = useMemo(() => {
     void revision; // registry grows as files load — rebuild the option list

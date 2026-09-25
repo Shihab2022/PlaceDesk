@@ -13,9 +13,9 @@ import {
   formatInt,
   humanizeKey,
 } from "../parse";
-import { EmptyState, SectionCard } from "../ui";
+import { EmptyState, PaginationBar, SectionCard } from "../ui";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 function CompetitorTable({
   rows,
@@ -26,8 +26,8 @@ function CompetitorTable({
   accent: string;
   typeLabel: string;
 }) {
-  const [visible, setVisible] = useState(PAGE_SIZE);
-  const shown = rows.slice(0, visible);
+  const [page, setPage] = useState(0);
+  const shown = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
   if (!rows.length) {
     return <EmptyState title={`No ${typeLabel.toLowerCase()} listed`} />;
@@ -48,7 +48,7 @@ function CompetitorTable({
           </thead>
           <tbody className="divide-y divide-line">
             {shown.map((row, i) => (
-              <tr key={`${row.id}-${i}`} className="hover:bg-canvas/60">
+              <tr key={`${row.id}-${page * PAGE_SIZE + i}`} className="hover:bg-canvas/60">
                 <td className="px-3 py-2">
                   <span className="flex items-center gap-2">
                     <span
@@ -79,15 +79,12 @@ function CompetitorTable({
           </tbody>
         </table>
       </div>
-      {visible < rows.length && (
-        <button
-          type="button"
-          onClick={() => setVisible((v) => v + PAGE_SIZE)}
-          className="focusable mt-3 w-full rounded-lg border border-line bg-canvas py-2 text-[12.5px] font-medium text-ink-700 transition-colors hover:text-brand-700"
-        >
-          Show more ({(rows.length - visible).toLocaleString("en-US")} remaining)
-        </button>
-      )}
+      <PaginationBar
+        page={page}
+        totalItems={rows.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
+      />
     </div>
   );
 }
