@@ -33,6 +33,14 @@ const DynamicMap = dynamic(() => import("@/components/placeDesk/map/MapView"), {
   loading: () => <MapSkeleton />,
 });
 
+const DynamicReportDashboard = dynamic(
+  () => import("@/components/placeDesk/reports/ReportDashboard"),
+  {
+    ssr: false,
+    loading: () => <MapSkeleton />,
+  },
+);
+
 function MapSkeleton() {
   return (
     <div className="absolute inset-0 bg-canvas" aria-hidden="true">
@@ -226,6 +234,10 @@ function Workspace() {
             onSave={() => setSaved(true)}
             saved={saved}
           />
+          {navActive === "reports" ? (
+            <DynamicReportDashboard />
+          ) : (
+            <>
           {navActive !== "maps" && (
             <WorkspaceSection
               section={navActive}
@@ -362,6 +374,8 @@ function Workspace() {
               />
             </div>
           </div>
+            </>
+          )}
         </main>
       </div>
 

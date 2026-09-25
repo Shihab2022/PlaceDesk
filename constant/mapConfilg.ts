@@ -99,3 +99,48 @@ export const mapLayerDetailConfig: LayerConfig[] = [
     targetPath: "site_analysis_delhi/supermarket.json",
   },
 ];
+
+export const reportDataLayerConfig: LayerConfig[] = [
+  {
+    name: "Sample Report Data 1",
+    id: "5c899789ab2031b6712915f1781fe94f",
+    color: "#E63946",
+    rgb: [230, 57, 70],
+    targetPath: "sample/5c899789ab2031b6712915f1781fe94f.json",
+  },
+  {
+    name: "Sample Report Data 2",
+    id: "59237f70-29b4-463c-a869-8323df9f54ca",
+    color: "#E63946",
+    rgb: [230, 57, 70],
+    targetPath: "sample/59237f70-29b4-463c-a869-8323df9f54ca.json",
+  },
+  {
+    name: "Sample Report Data 3",
+    id: "6d32f6d4e46e205895ab5d4ed602f5ad",
+    color: "#E63946",
+    rgb: [230, 57, 70],
+    targetPath: "sample/6d32f6d4e46e205895ab5d4ed602f5ad.json",
+  },
+  {
+    name: "Sample Report Data 4",
+    id: "c4fcbc272a03aa1e58d72f22c7461d9d",
+    color: "#E63946",
+    rgb: [230, 57, 70],
+    targetPath: "sample/c4fcbc272a03aa1e58d72f22c7461d9d.json",
+  },
+  {
+    name: "Sample Report Data 5",
+    id: "df93c3fa-d9ac-46ad-9b8a-d423fb715ae6",
+    color: "#E63946",
+    rgb: [230, 57, 70],
+    targetPath: "sample/df93c3fa-d9ac-46ad-9b8a-d423fb715ae6.json",
+  },
+  {
+    name: "Sample Report Data 6",
+    id: "fab92cb739d02d094338d61c9d98a79b",
+    color: "#E63946",
+    rgb: [230, 57, 70],
+    targetPath: "sample/fab92cb739d02d094338d61c9d98a79b.json",
+  },
+];
