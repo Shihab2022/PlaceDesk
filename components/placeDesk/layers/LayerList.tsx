@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -51,7 +51,7 @@ export default function LayerList() {
         <button
           type="button"
           onClick={() => setAdding(true)}
-          className="btn-primary !px-2.5 !py-1.5 !text-[11px]"
+          className="focusable inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-[11px] font-semibold text-white shadow-sm shadow-brand-600/30 transition-all hover:bg-brand-800"
         >
           <FiPlus className="h-3.5 w-3.5" aria-hidden /> Add Layer
         </button>
@@ -185,7 +185,11 @@ export default function LayerList() {
             <p className="mx-auto mt-1 max-w-[220px] text-[12px] leading-snug text-ink-400">
               Add a category to start exploring spatial patterns.
             </p>
-            <button type="button" onClick={() => setAdding(true)} className="btn-primary mx-auto mt-3">
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="focusable inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-[12px] font-semibold text-white shadow-sm shadow-brand-600/30 transition-all hover:bg-brand-800 mx-auto mt-3"
+            >
               <FiPlus className="h-3.5 w-3.5" aria-hidden /> Create Layer
             </button>
           </div>

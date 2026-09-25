@@ -1,4 +1,4 @@
-﻿/**
+/**
  * VisualizationSettings types — shared between the app store and the
  * LayerState type. Lives outside AppStoreContext to avoid circular imports.
  */
@@ -31,11 +31,20 @@ export interface ClusterSettings {
   opacity: number;
 }
 
+export interface HexagonSettings {
+  radius: number;
+  coverage: number;
+  elevationScale: number;
+  color: string;
+  opacity: number;
+}
+
 export interface VisualizationSettings {
   scatter: ScatterSettings;
   icon: IconSettings;
   heatmap: HeatmapSettings;
   cluster: ClusterSettings;
+  hexagon: HexagonSettings;
 }
 
 export const VISUALIZATIONS = [
@@ -95,5 +104,12 @@ export const DEFAULT_VIZ_SETTINGS: VisualizationSettings = {
     maxZoom: 14,
     color: "#7C4DFF",
     opacity: 80,
+  },
+  hexagon: {
+    radius: 650,
+    coverage: 0.9,
+    elevationScale: 10,
+    color: "#7C4DFF",
+    opacity: 85,
   },
 };

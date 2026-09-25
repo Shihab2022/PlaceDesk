@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useId } from "react";
 import {
@@ -25,33 +25,6 @@ import {
 } from "../app/VisualizationSettings";
 import type { VisualizationId } from "../app/VisualizationSettings";
 import { useAppStore } from "../app/AppStoreContext";
-
-const VIZ_LABEL: Record<string, string> = {
-  point: "Scatter",
-  cluster: "Cluster",
-  density: "Density",
-  heatmap: "Heatmap",
-  hexagon: "Hexagon",
-  bubble: "Bubble",
-};
-
-/** Map internal viz ids to deck.gl-style labels for the legacy viz switcher. */
-function legacyVizFromVisualization(v: VisualizationId): ComputedLayer["visualizationType"] {
-  switch (v) {
-    case "scatter":
-      return "point";
-    case "cluster":
-      return "cluster";
-    case "density":
-      return "density";
-    case "heatmap":
-      return "heatmap";
-    case "hexagon":
-      return "hexagon";
-    case "icon":
-      return "bubble";
-  }
-}
 
 function VizMini({ type, color }: { type: VisualizationId; color: string }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -511,27 +484,48 @@ export default function LayerPanel({ layer, cityLabel }: LayerPanelProps) {
               {viz === "hexagon" && (
                 <div className="space-y-3">
                   <SliderRow
-                    label="Radius"
-                    value={layer.appearance.radius}
-                    min={3}
-                    max={24}
+                    label="Hexagon Radius"
+                    value={settings.hexagon?.radius ?? 650}
+                    min={100}
+                    max={3000}
+                    step={50}
+                    format={(v) => `${v} m`}
+                    onChange={(v) => store.updateVizSettings(id, { radius: v })}
+                  />
+                  <SliderRow
+                    label="Coverage"
+                    value={Math.round((settings.hexagon?.coverage ?? 0.9) * 100)}
+                    min={10}
+                    max={100}
+                    step={5}
+                    format={(v) => `${v}%`}
+                    onChange={(v) => store.updateVizSettings(id, { coverage: v / 100 })}
+                  />
+                  <SliderRow
+                    label="Elevation Scale"
+                    value={settings.hexagon?.elevationScale ?? 10}
+                    min={1}
+                    max={50}
                     step={1}
-                    format={(v) => `${v} px`}
-                    onChange={(v) => store.updateAppearance(id, { radius: v })}
+                    format={(v) => `${v}\u00D7`}
+                    onChange={(v) => store.updateVizSettings(id, { elevationScale: v })}
                   />
                   <SliderRow
                     label="Opacity"
-                    value={layer.appearance.opacity}
+                    value={settings.hexagon?.opacity ?? 85}
                     min={20}
                     max={100}
                     step={5}
                     format={(v) => `${v}%`}
-                    onChange={(v) => store.updateAppearance(id, { opacity: v })}
+                    onChange={(v) => store.updateVizSettings(id, { opacity: v })}
                   />
                   <SwatchPicker
                     label="Color"
-                    value={color}
-                    onChange={(c) => store.updateAppearance(id, { color: c })}
+                    value={settings.hexagon?.color ?? color}
+                    onChange={(c) => {
+                      store.updateVizSettings(id, { color: c });
+                      store.updateAppearance(id, { color: c });
+                    }}
                   />
                   <p className="text-[11px] text-ink-400">
                     Hexagon aggregation renders all matching records as 3D hexagons.

@@ -1,4 +1,4 @@
-﻿/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable react-hooks/exhaustive-deps */
 "use client";
 
 /**
@@ -52,6 +52,7 @@ import type {
   IconSettings,
   HeatmapSettings,
   ClusterSettings,
+  HexagonSettings,
 } from "./VisualizationSettings";
 
 /* re-exports for back-compat with the rest of the app */
@@ -197,7 +198,11 @@ export interface AppState {
   updateVizSettings: (
     id: string,
     patch: Partial<
-      ScatterSettings & IconSettings & HeatmapSettings & ClusterSettings
+      ScatterSettings &
+        IconSettings &
+        HeatmapSettings &
+        ClusterSettings &
+        HexagonSettings
     >,
   ) => void;
   setFilters: (id: string, filters: Record<string, FilterValue>) => void;
@@ -385,7 +390,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       visualizationType: "scatter",
       appearance: { color: cat.color, opacity: 80, radius: 8, lineWidth: 2 },
       filters: {},
-      vizSettings: cloneVizSettings(DEFAULT_VIZ_SETTINGS),
+      vizSettings: createDefaultVizSettings(cat.color),
     });
   }, []);
 
@@ -427,7 +432,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         visualizationType: "scatter",
         appearance: { color: cat.color, opacity: 80, radius: 8, lineWidth: 2 },
         filters: {},
-        vizSettings: cloneVizSettings(DEFAULT_VIZ_SETTINGS),
+        vizSettings: createDefaultVizSettings(cat.color),
       });
       return id;
     },
@@ -506,21 +511,31 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     (
       id: string,
       p: Partial<
-        ScatterSettings & IconSettings & HeatmapSettings & ClusterSettings
+        ScatterSettings &
+          IconSettings &
+          HeatmapSettings &
+          ClusterSettings &
+          HexagonSettings
       >,
     ) => {
       patch((ls) =>
-        ls.map((l) =>
-          l.id === id
-            ? {
-                ...l,
-                vizSettings: {
-                  ...(l.vizSettings ?? DEFAULT_VIZ_SETTINGS),
-                  ...p,
-                } as VisualizationSettings,
-              }
-            : l,
-        ),
+        ls.map((l) => {
+          if (l.id !== id) return l;
+          const current = l.vizSettings ?? DEFAULT_VIZ_SETTINGS;
+          const viz = l.visualizationType;
+          return {
+            ...l,
+            vizSettings: {
+              ...current,
+              scatter: { ...current.scatter, ...(viz === "scatter" || viz === "point" ? p : {}) },
+              icon: { ...current.icon, ...(viz === "icon" || viz === "bubble" ? p : {}) },
+              heatmap: { ...current.heatmap, ...(viz === "heatmap" ? p : {}) },
+              cluster: { ...current.cluster, ...(viz === "cluster" ? p : {}) },
+              hexagon: { ...current.hexagon, ...(viz === "hexagon" ? p : {}) },
+              ...p,
+            } as VisualizationSettings,
+          };
+        }),
       );
     },
     [patch],
@@ -764,7 +779,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
             lineWidth: 2,
           },
           filters: {},
-          vizSettings: cloneVizSettings(DEFAULT_VIZ_SETTINGS),
+          vizSettings: createDefaultVizSettings(ls.color ?? cat.color),
         });
       });
     },
@@ -928,12 +943,24 @@ function pushGrouped<K, V>(m: Map<K, V[]>, key: K, value: V) {
   m.get(key)!.push(value);
 }
 
+function createDefaultVizSettings(color: string): VisualizationSettings {
+  const base = cloneVizSettings(DEFAULT_VIZ_SETTINGS);
+  base.scatter.fillColor = color;
+  base.scatter.borderColor = color;
+  base.scatter.borderWidth = 0;
+  base.icon.color = color;
+  base.cluster.color = color;
+  base.hexagon.color = color;
+  return base;
+}
+
 function cloneVizSettings(s: VisualizationSettings): VisualizationSettings {
   return {
     scatter: { ...s.scatter },
     icon: { ...s.icon },
     heatmap: { ...s.heatmap },
     cluster: { ...s.cluster },
+    hexagon: { ...s.hexagon },
   };
 }
 
