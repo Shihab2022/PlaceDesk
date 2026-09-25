@@ -16,23 +16,6 @@ import {
 import { mapLayerDetailConfig } from "../../../constant/mapConfilg";
 import { CATEGORY_KEYS, type CategoryConfig, type CategoryKey } from "./types";
 
-/** Geography labels used by the (preserved) Delhi layer config. */
-const LABEL_BY_KEY: Record<CategoryKey, string> = {
-  malls: "Malls",
-  furniture: "Furniture",
-  electronics: "Electronics",
-  leisure: "Leisure",
-  medical: "Medical",
-  transport: "Transport",
-  companies: "Companies",
-  education: "Education",
-  fashion: "Fashion",
-  fitness: "Fitness",
-  food: "Food",
-  others: "Others",
-  supermarket: "Supermarket",
-};
-
 /**
  * Resolve the Delhi `targetPath` from the existing mapLayerDetailConfig
  * so the /api/pois?path=... architecture is preserved.

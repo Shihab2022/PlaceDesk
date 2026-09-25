@@ -31,7 +31,6 @@ function buildIco(pngBuffers) {
   const dirSize = pngBuffers.length * 16;
   const entries = [];
   let offset = 6 + dirSize;
-  const dir = Buffer.alloc(dirSize);
 
   pngBuffers.forEach((png, i) => {
     const e = Buffer.alloc(16);

@@ -37,8 +37,6 @@ export interface MapLayerApi {
   reloadLayer: (id: string) => void;
 }
 
-type LayerPatch = NonNullable<Parameters<MapLayerApi["updateLayer"]>[1]>;
-
 const makeAppearance = (color: string): Appearance => ({
   color,
   opacity: 80,

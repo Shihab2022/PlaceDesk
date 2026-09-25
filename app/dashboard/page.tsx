@@ -70,26 +70,33 @@ function Workspace() {
     () => CITIES.find((c) => c.id === store.cityId) ?? CITIES[0],
     [store.cityId],
   );
-  const { layers, activeId, viewState } = store;
+  const {
+    layers,
+    activeId,
+    viewState,
+    setActiveId,
+    setSelectedLocation,
+    setViewState,
+  } = store;
 
   /* Keep a valid layer selected */
   useEffect(() => {
     if (!layers.some((l) => l.id === activeId)) {
-      store.setActiveId(layers[0]?.id ?? null);
+      setActiveId(layers[0]?.id ?? null);
     }
-  }, [layers, activeId, store.setActiveId]);
+  }, [layers, activeId, setActiveId]);
 
   /* Recenter the map when the city changes */
   useEffect(() => {
-    store.setSelectedLocation(null);
-    store.setViewState({
+    setSelectedLocation(null);
+    setViewState({
       longitude: city.center.lng,
       latitude: city.center.lat,
       zoom: city.zoom,
       pitch: 0,
       bearing: 0,
     });
-  }, [city, store.setSelectedLocation, store.setViewState]);
+  }, [city, setSelectedLocation, setViewState]);
 
   /* ⌘K global shortcut */
   useEffect(() => {
@@ -162,24 +169,24 @@ function Workspace() {
 
   const zoomBy = useCallback(
     (dir: number) => {
-      store.setViewState({
-        ...store.viewState,
-        zoom: Math.min(16, Math.max(3, store.viewState.zoom + dir)),
+      setViewState({
+        ...viewState,
+        zoom: Math.min(16, Math.max(3, viewState.zoom + dir)),
       });
     },
-    [store.setViewState, store.viewState],
+    [setViewState, viewState],
   );
 
   const locateMe = useCallback(() => {
-    store.setViewState({
-      ...store.viewState,
+    setViewState({
+      ...viewState,
       longitude: city.center.lng,
       latitude: city.center.lat,
-      zoom: Math.max(store.viewState.zoom, city.zoom + 2),
+      zoom: Math.max(viewState.zoom, city.zoom + 2),
       pitch: 0,
       bearing: 0,
     });
-  }, [city, store.setViewState, store.viewState]);
+  }, [city, setViewState, viewState]);
 
   const fullscreen = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen();

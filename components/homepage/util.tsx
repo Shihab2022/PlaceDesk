@@ -10,12 +10,10 @@ export function Reveal({
   children,
   className = "",
   delay = 0,
-  as = "div",
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
-  as?: "div" | "section" | "li" | "h2" | "h3" | "span" | "p";
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
@@ -36,7 +34,10 @@ export function Reveal({
       io.observe(el);
       return () => io.disconnect();
     }
-    setShown(true);
+    // No IntersectionObserver (very old browser / test env): reveal on the
+    // next frame so we never setState synchronously inside the effect body.
+    const raf = requestAnimationFrame(() => setShown(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const style: CSSProperties = { transitionDelay: delay + "ms" };

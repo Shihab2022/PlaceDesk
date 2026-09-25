@@ -9,7 +9,6 @@ import { encodeMapState } from "../services/mapState";
 export default function ShareModal({ onClose }: { onClose: () => void }) {
   const store = useAppStore();
   const [copied, setCopied] = useState(false);
-  const [link, setLink] = useState("");
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -17,7 +16,9 @@ export default function ShareModal({ onClose }: { onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  useEffect(() => {
+  // Derived from the current map state — memoised instead of mirrored into
+  // state from an effect (which would cascade renders on every store change).
+  const link = useMemo(() => {
     const state = {
       city: store.cityId,
       style: store.mapThemeId,
@@ -30,12 +31,16 @@ export default function ShareModal({ onClose }: { onClose: () => void }) {
       search: store.searchQuery || undefined,
     };
     const qs = encodeMapState(state);
-    const base =
-      typeof window !== "undefined"
-        ? `${window.location.origin}${window.location.pathname}`
-        : "";
-    setLink(`${base}?${qs}`);
-  }, [store.cityId, store.mapThemeId, store.layers, store.viewState, store.division, store.searchQuery]);
+    const base = `${window.location.origin}${window.location.pathname}`;
+    return `${base}?${qs}`;
+  }, [
+    store.cityId,
+    store.mapThemeId,
+    store.layers,
+    store.viewState,
+    store.division,
+    store.searchQuery,
+  ]);
 
   const copy = async () => {
     try {

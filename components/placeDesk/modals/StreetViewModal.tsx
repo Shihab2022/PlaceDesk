@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import {
-  FiAlertTriangle,
   FiCameraOff,
   FiExternalLink,
   FiMap,
@@ -37,6 +36,9 @@ export default function StreetViewModal() {
   }, [open, store]);
 
   /* Verify imagery exists at this coordinate before showing the embed. */
+  /* eslint-disable react-hooks/set-state-in-effect --
+     the pre-check intentionally resets `check` synchronously as soon as the
+     modal opens (or the requested coordinate changes). */
   useEffect(() => {
     if (!open || !req) return;
     const result = getStreetViewResult({
@@ -66,6 +68,7 @@ export default function StreetViewModal() {
       cancelled = true;
     };
   }, [open, req]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!open || !req) return null;
 

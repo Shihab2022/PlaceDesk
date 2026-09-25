@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import AuthShell from "@/components/auth/AuthShell";
 
 export default function ResetPasswordPage({ searchParams }: { searchParams?: { email?: string } }) {
-  const router = useRouter();
   const initialEmail = searchParams?.email ?? "";
   const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");

@@ -16,14 +16,12 @@ interface HeaderProps {
   onOpenSearch: () => void;
   onShare?: () => void;
   onExport?: () => void;
-  usage?: number; // 0-100
 }
 
 export default function Header({
   onOpenSearch,
   onShare,
   onExport,
-  usage = 64,
 }: HeaderProps) {
   const [userOpen, setUserOpen] = useState(false);
 

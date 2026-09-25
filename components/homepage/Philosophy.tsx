@@ -10,7 +10,7 @@ export default function Philosophy() {
       <div className="relative mx-auto max-w-4xl px-6 text-center sm:px-8">
         <Reveal>
           <p className="text-3xl font-medium leading-snug tracking-tight text-ink-900 sm:text-5xl">
-            Don't just ask what is happening.
+            Don&apos;t just ask what is happening.
           </p>
         </Reveal>
         <Reveal delay={120}>

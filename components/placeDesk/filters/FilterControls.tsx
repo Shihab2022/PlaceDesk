@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { FiChevronDown, FiX } from "react-icons/fi";
 import type { FilterDef, FilterValue, LocationData } from "../data";
 
@@ -87,6 +88,23 @@ function FilterMulti({
   );
 }
 
+function clampNumber(v: number, lo: number, hi: number) {
+  return Math.min(hi, Math.max(lo, v));
+}
+
+function stepDecimals(step: number) {
+  const s = String(step);
+  return s.includes(".") ? s.split(".")[1].length : 0;
+}
+
+/**
+ * Dual-thumb range control.
+ *
+ * Both thumbs are plain spans driven by pointer events on the track — two
+ * stacked native `<input type="range">` elements make the lower thumb
+ * impossible to grab and misalign the track. Keyboard users can focus either
+ * thumb and use arrow / page / home / end keys.
+ */
 function FilterRange({
   def,
   value,
@@ -100,54 +118,150 @@ function FilterRange({
   max: number;
   onPick: (v: [number, number]) => void;
 }) {
-  const rawMin = Array.isArray(value) ? Number(value[0]) : min;
-  const rawMax = Array.isArray(value) ? Number(value[1]) : max;
-  const cur: [number, number] = [
-    Math.max(min, Math.min(max, Number.isFinite(rawMin) ? rawMin : min)),
-    Math.max(min, Math.min(max, Number.isFinite(rawMax) ? rawMax : max)),
-  ];
-  if (cur[0] > cur[1]) cur[0] = cur[1];
+  const step = def.step && def.step > 0 ? def.step : 1;
+  const decimals = stepDecimals(step);
+  const span = max - min || 1;
+
+  /** Snap any value onto the slider's step grid, inside [min, max]. */
+  const snap = (v: number) =>
+    Number(
+      clampNumber(min + Math.round((v - min) / step) * step, min, max).toFixed(
+        decimals,
+      ),
+    );
+
+  // Guard against stale / out-of-range values stored on the layer.
+  const rawLo = Array.isArray(value) ? Number(value[0]) : min;
+  const rawHi = Array.isArray(value) ? Number(value[1]) : max;
+  const lo = clampNumber(Number.isFinite(rawLo) ? snap(rawLo) : min, min, max);
+  const hi = clampNumber(Number.isFinite(rawHi) ? snap(rawHi) : max, lo, max);
+
+  const pct = (v: number) => ((v - min) / span) * 100;
   const fmt = (v: number) => (def.format ? def.format(v) : String(v));
+  const openEnded = def.max !== undefined;
+
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState<"lo" | "hi" | null>(null);
+
+  const valueAt = (clientX: number) => {
+    const rect = trackRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return min;
+    return snap(min + clampNumber((clientX - rect.left) / rect.width, 0, 1) * span);
+  };
+
+  const move = (which: "lo" | "hi", next: number) => {
+    if (which === "lo") onPick([clampNumber(next, min, hi), hi]);
+    else onPick([lo, clampNumber(next, lo, max)]);
+  };
+
+  const startDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const v = valueAt(e.clientX);
+    // Grab whichever thumb sits closest to the pointer.
+    const which: "lo" | "hi" = Math.abs(v - lo) <= Math.abs(v - hi) ? "lo" : "hi";
+    setDrag(which);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    move(which, which === "lo" ? Math.min(v, hi) : Math.max(v, lo));
+  };
+
+  const onDragMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!drag) return;
+    const v = valueAt(e.clientX);
+    move(drag, drag === "lo" ? Math.min(v, hi) : Math.max(v, lo));
+  };
+
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    setDrag(null);
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const onThumbKey =
+    (which: "lo" | "hi") => (e: React.KeyboardEvent<HTMLSpanElement>) => {
+      const current = which === "lo" ? lo : hi;
+      const jump = step * 10;
+      let next: number;
+      switch (e.key) {
+        case "ArrowLeft":
+        case "ArrowDown":
+          next = current - step;
+          break;
+        case "ArrowRight":
+        case "ArrowUp":
+          next = current + step;
+          break;
+        case "PageDown":
+          next = current - jump;
+          break;
+        case "PageUp":
+          next = current + jump;
+          break;
+        case "Home":
+          next = which === "lo" ? min : lo;
+          break;
+        case "End":
+          next = which === "lo" ? hi : max;
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+      move(which, snap(clampNumber(next, min, max)));
+    };
+
   return (
     <div>
-      <Label>{def.label}</Label>
-      <div className="flex items-center justify-between rounded-lg border border-line bg-white px-2.5 py-1.5 text-[11px] font-medium text-ink-700">
-        <span>{fmt(cur[0])}</span>
-        <span className="text-ink-400">—</span>
-        <span>{cur[1] >= max ? `${fmt(cur[1])}+` : fmt(cur[1])}</span>
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="truncate text-[11px] font-medium text-ink-500">{def.label}</span>
+        <span className="shrink-0 rounded-md bg-brand-50 px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums text-brand-800">
+          {fmt(lo)} – {fmt(hi)}
+          {openEnded && hi >= max ? "+" : ""}
+        </span>
       </div>
-      <div className="relative mt-3 h-4">
-        <div
-          className="pointer-events-none absolute bottom-1.5 h-1 rounded-full bg-brand-300"
-          style={{
-            left: `${((cur[0] - min) / (max - min || 1)) * 100}%`,
-            width: `${((cur[1] - cur[0]) / (max - min || 1)) * 100}%`,
-          }}
+
+      <div
+        ref={trackRef}
+        onPointerDown={startDrag}
+        onPointerMove={onDragMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onLostPointerCapture={endDrag}
+        className="relative mt-2.5 mb-1 h-6 cursor-pointer touch-none select-none"
+      >
+        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-[#e6e7ec]" />
+        <span
+          className="pointer-events-none absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-brand-500"
+          style={{ left: `${pct(lo)}%`, width: `${Math.max(0, pct(hi) - pct(lo))}%` }}
         />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={def.step ?? 1}
-          value={cur[0]}
-          onChange={(e) =>
-            onPick([Math.min(Number(e.target.value), cur[1]), cur[1]])
-          }
-          aria-label={`${def.label} (minimum)`}
-          className="absolute inset-x-0 bottom-0 z-10 w-full"
-        />
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={def.step ?? 1}
-          value={cur[1]}
-          onChange={(e) =>
-            onPick([cur[0], Math.max(Number(e.target.value), cur[0])])
-          }
-          aria-label={`${def.label} (maximum)`}
-          className="absolute inset-x-0 bottom-0 z-20 w-full"
-        />
+        {(["lo", "hi"] as const).map((which) => {
+          const v = which === "lo" ? lo : hi;
+          return (
+            <span
+              key={which}
+              role="slider"
+              tabIndex={0}
+              aria-label={`${def.label} ${which === "lo" ? "minimum" : "maximum"}`}
+              aria-orientation="horizontal"
+              aria-valuemin={which === "lo" ? min : lo}
+              aria-valuemax={which === "lo" ? hi : max}
+              aria-valuenow={v}
+              aria-valuetext={fmt(v)}
+              onKeyDown={onThumbKey(which)}
+              className={`focusable pointer-events-none absolute top-1/2 z-10 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-brand-500 bg-white shadow-[0_1px_4px_rgba(23,23,23,0.25)] transition-transform duration-150 ${
+                drag === which ? "scale-[1.15]" : ""
+              }`}
+              style={{ left: `${pct(v)}%` }}
+            />
+          );
+        })}
+      </div>
+
+      <div className="flex items-center justify-between text-[10px] tabular-nums text-ink-400">
+        <span>{fmt(min)}</span>
+        <span>
+          {fmt(max)}
+          {openEnded ? "+" : ""}
+        </span>
       </div>
     </div>
   );

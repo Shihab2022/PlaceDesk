@@ -151,8 +151,6 @@ export function mulberry32(seed: number) {
   };
 }
 
-const pick = <T,>(arr: T[], r: () => number) => arr[Math.floor(r() * arr.length)];
-
 /** Parse bracket-ish text arrays like "[[Shopping mall]]" or "[]" */
 export function parseTextArray(s?: string): string[] {
   if (!s) return [];

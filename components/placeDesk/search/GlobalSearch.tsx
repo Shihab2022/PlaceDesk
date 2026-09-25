@@ -32,6 +32,9 @@ interface GlobalSearchProps {
 
 export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   const store = useAppStore();
+  // Pulled out so the effect below can depend on the stable callback instead of
+  // the whole store object.
+  const clearSearch = store.clearSearch;
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -82,11 +85,11 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
     if (!open) return;
     setTimeout(() => {
       setQuery("");
-      store.clearSearch();
+      clearSearch();
       setActive(0);
     }, 0);
     setTimeout(() => inputRef.current?.focus(), 0);
-  }, [open, store.clearSearch]);
+  }, [open, clearSearch]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

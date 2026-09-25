@@ -65,7 +65,7 @@ export default function UseCases() {
   return (
     <Section id="solutions" className="py-20 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
-        <Eyebrow>Built for decisions that depend on "where"</Eyebrow>
+        <Eyebrow>Built for decisions that depend on &ldquo;where&rdquo;</Eyebrow>
         <h2 className="mt-5 text-balance text-3xl font-semibold tracking-tight text-ink-900 sm:text-4xl">
           Where you decide changes{" "}
           <span className="text-ink-500">what you decide.</span>

@@ -10,8 +10,10 @@ import {
   useState,
 } from "react";
 import type { ReactNode } from "react";
+import { THEME_STORAGE_KEY, type ThemeMode } from "./themeStorage";
 
-export type ThemeMode = "light" | "dark" | "system";
+/* re-export so existing imports of `ThemeMode` keep working */
+export type { ThemeMode };
 
 interface ThemeContextValue {
   theme: ThemeMode;
@@ -21,28 +23,43 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
-const STORAGE_KEY = "placedesk-theme";
+const STORAGE_KEY = THEME_STORAGE_KEY;
 
-function systemPref(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+function isThemeMode(v: string | null): v is ThemeMode {
+  return v === "light" || v === "dark" || v === "system";
+}
+
+/** Read the persisted preference. Only ever called from the client. */
+function readStoredTheme(): ThemeMode | null {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return isThemeMode(saved) ? saved : null;
+  } catch {
+    return null;
+  }
 }
 
 /**
  * ThemeProvider — app-wide Light / Dark / System theming, persisted to
  * localStorage and applied via the `data-theme` attribute (drive CSS vars).
  * "System" reacts to prefers-color-scheme.
+ *
+ * The state always starts at "light" so the server-rendered HTML and the first
+ * client render agree (reading localStorage / matchMedia during render is a
+ * classic hydration mismatch). The stored preference is applied in an effect
+ * right after hydration; the inline script in the root layout paints the
+ * correct `data-theme` before hydration, so there is no flash either.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>(() => {
-    if (typeof window === "undefined") return "light";
-    const saved =
-      (localStorage.getItem(STORAGE_KEY) as ThemeMode | null) || "light";
-    return saved;
-  });
-  const [system, setSystem] = useState<"light" | "dark">(systemPref);
+  const [theme, setThemeState] = useState<ThemeMode>("light");
+  const [system, setSystem] = useState<"light" | "dark">("light");
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const stored = readStoredTheme();
+    if (stored) setThemeState(stored);
+    setReady(true);
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
@@ -56,18 +73,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const resolved = theme === "system" ? system : theme;
 
   useEffect(() => {
+    if (!ready) return;
     const root = document.documentElement;
     root.dataset.theme = resolved;
     root.style.colorScheme = resolved;
-  }, [resolved]);
+  }, [ready, resolved]);
 
   useEffect(() => {
+    if (!ready) return;
     try {
       localStorage.setItem(STORAGE_KEY, theme);
     } catch {
       /* ignore storage errors */
     }
-  }, [theme]);
+  }, [ready, theme]);
 
   const setTheme = useCallback((mode: ThemeMode) => setThemeState(mode), []);
   const toggle = useCallback(

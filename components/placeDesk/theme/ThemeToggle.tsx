@@ -17,7 +17,7 @@ export default function ThemeToggle({
 }: {
   className?: string;
 }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolved, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -31,10 +31,9 @@ export default function ThemeToggle({
     return () => document.removeEventListener("mousedown", onDoc);
   }, [open]);
 
-  const dark =
-    theme === "dark" ||
-    (theme === "system" &&
-      window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+  // Resolved theme comes from the provider — reading `matchMedia` during render
+  // would branch differently on the server and break hydration.
+  const dark = resolved === "dark";
 
   return (
     <div ref={ref} className={`relative ${className}`}>

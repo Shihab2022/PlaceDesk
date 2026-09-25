@@ -93,19 +93,25 @@ function MiniDonut({
   ); // top-3 share
   const radius = 26;
   const circ = 2 * Math.PI * radius;
-  let acc = 0;
   const palette = ["#7C4DFF", "#8B5CF6", "#A78BFA"];
+  // Pre-compute each arc (fraction + cumulative start) instead of mutating an
+  // accumulator while rendering.
+  const arcs = top3.map((d, i) => {
+    const frac = d.pct / total;
+    const start = top3
+      .slice(0, i)
+      .reduce((sum, prev) => sum + prev.pct / total, 0);
+    return { name: d.name, frac, start };
+  });
   return (
     <svg viewBox="0 0 72 72" className="h-16 w-16" aria-hidden="true">
       <circle cx="36" cy="36" r={radius} fill="none" stroke="#EEF0F5" strokeWidth="10" />
-      {top3.map((d, i) => {
-        const frac = d.pct / total;
-        const dash = frac * circ;
-        const offset = -acc * circ;
-        acc += frac;
+      {arcs.map((a, i) => {
+        const dash = a.frac * circ;
+        const offset = -a.start * circ;
         return (
           <circle
-            key={d.name}
+            key={a.name}
             cx="36"
             cy="36"
             r={radius}

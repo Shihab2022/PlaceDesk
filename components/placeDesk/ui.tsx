@@ -163,35 +163,35 @@ export function Section({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-t border-line first:border-t-0">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="focusable flex w-full items-center justify-between px-4 py-3 text-left"
-      >
-        <span className="flex items-center gap-2">
-          <span className="text-[12px] font-semibold uppercase tracking-wide text-ink-500">
-            {title}
-          </span>
-          {badge}
-        </span>
-        <span className="flex items-center gap-1.5">
-          {action && (
-            <span
-              role="none"
-              onClick={(e) => e.stopPropagation()}
-              onKeyDown={(e) => e.stopPropagation()}
-            >
-              {action}
+      {/*
+        The collapse toggle and the optional `action` are siblings on purpose:
+        rendering an action button inside the header button would produce
+        nested <button> elements (invalid HTML -> React hydration error).
+      */}
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={`${open ? "Collapse" : "Expand"} ${title}`}
+          className="focusable flex min-w-0 flex-1 items-center justify-between gap-2 px-4 py-3 text-left"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-[12px] font-semibold uppercase tracking-wide text-ink-500">
+              {title}
             </span>
-          )}
+            {badge}
+          </span>
           <FiChevronDown
-            className={`h-3.5 w-3.5 text-ink-400 transition-transform duration-200 ${
+            className={`h-3.5 w-3.5 shrink-0 text-ink-400 transition-transform duration-200 ${
               open ? "" : "-rotate-90"
             }`}
           />
-        </span>
-      </button>
+        </button>
+        {action ? (
+          <div className="flex shrink-0 items-center pr-4">{action}</div>
+        ) : null}
+      </div>
       <div
         className={`grid transition-all duration-200 ${
           open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
