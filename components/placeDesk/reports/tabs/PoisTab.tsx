@@ -2,17 +2,21 @@
 
 /** POI mix: category distribution, per-category highlights and top brands. */
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { ReportModel } from "../types";
 import { formatDecimal, formatInt, formatNumber, humanizeKey } from "../parse";
-import { EmptyState, KeyValueList, PaginationBar, SectionCard } from "../ui";
+import {
+  EmptyState,
+  KeyValueList,
+  PaginationBar,
+  SectionCard,
+  usePagination,
+} from "../ui";
 import { DonutChart } from "../charts";
-
-const CATEGORY_PAGE_SIZE = 10;
 
 export default function PoisTab({ model }: { model: ReportModel }) {
   const summary = model.poiSummary;
-  const [categoryPage, setCategoryPage] = useState(0);
+  const categories = usePagination();
 
   const sortedEntries = useMemo(() => {
     if (!summary) return [];
@@ -93,8 +97,8 @@ export default function PoisTab({ model }: { model: ReportModel }) {
             <tbody className="divide-y divide-line">
               {sortedEntries
                 .slice(
-                  categoryPage * CATEGORY_PAGE_SIZE,
-                  (categoryPage + 1) * CATEGORY_PAGE_SIZE,
+                  categories.page * categories.pageSize,
+                  (categories.page + 1) * categories.pageSize,
                 )
                 .map((entry) => (
                   <tr key={entry.category} className="hover:bg-canvas/60">
@@ -116,10 +120,11 @@ export default function PoisTab({ model }: { model: ReportModel }) {
           </table>
         </div>
         <PaginationBar
-          page={categoryPage}
+          page={categories.page}
           totalItems={sortedEntries.length}
-          pageSize={CATEGORY_PAGE_SIZE}
-          onPageChange={setCategoryPage}
+          pageSize={categories.pageSize}
+          onPageChange={categories.setPage}
+          onPageSizeChange={categories.changePageSize}
         />
       </SectionCard>
 

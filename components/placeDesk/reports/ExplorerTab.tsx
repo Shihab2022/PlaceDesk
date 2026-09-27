@@ -8,11 +8,10 @@
 import { useMemo, useState } from "react";
 import type { ReportModel } from "./types";
 import { formatInt } from "./parse";
-import { EmptyState, PaginationBar, SectionCard } from "./ui";
+import { EmptyState, PaginationBar, SectionCard, usePagination } from "./ui";
 
 type SourceRow = Record<string, unknown>;
 
-const PAGE_SIZE = 50;
 const MAX_COLUMNS = 40;
 
 function cellText(value: unknown): string {
@@ -113,7 +112,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
   const [sourceId, setSourceId] = useState(sources[0]?.id ?? "");
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"table" | "json">("table");
-  const [page, setPage] = useState(0);
+  const table = usePagination();
 
   const source = sources.find((s) => s.id === sourceId) ?? sources[0];
 
@@ -139,9 +138,12 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
     return order;
   }, [rows]);
 
-  const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount - 1);
-  const pageRows = rows.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const pageCount = Math.max(1, Math.ceil(rows.length / table.pageSize));
+  const safePage = Math.min(table.page, pageCount - 1);
+  const pageRows = rows.slice(
+    safePage * table.pageSize,
+    (safePage + 1) * table.pageSize,
+  );
 
   if (!source) {
     return <EmptyState title="Nothing to explore" message="No collections in this report." />;
@@ -157,7 +159,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
           value={source.id}
           onChange={(e) => {
             setSourceId(e.target.value);
-            setPage(0);
+            table.setPage(0);
             setQuery("");
           }}
           aria-label="Choose collection"
@@ -174,7 +176,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setPage(0);
+            table.setPage(0);
           }}
           placeholder="Filter rows…"
           aria-label="Filter rows"
@@ -199,7 +201,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
 
       {view === "json" ? (
         <pre className="max-h-[480px] overflow-auto rounded-lg bg-ink-900 p-4 text-[11.5px] leading-relaxed text-emerald-200">
-          {JSON.stringify(rows.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE), null, 2)}
+          {JSON.stringify(pageRows, null, 2)}
         </pre>
       ) : rows.length ? (
         <div className="overflow-x-auto">
@@ -234,14 +236,13 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
         <EmptyState title="No rows match" message="Clear the filter to see data again." />
       )}
 
-      {pageCount > 1 && (
-        <PaginationBar
-          page={safePage}
-          totalItems={rows.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-        />
-      )}
+      <PaginationBar
+        page={safePage}
+        totalItems={rows.length}
+        pageSize={table.pageSize}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.changePageSize}
+      />
     </SectionCard>
   );
 }

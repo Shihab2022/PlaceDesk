@@ -1,13 +1,13 @@
 "use client";
 
 /**
- * Report masthead: identity, key metadata, report switcher and export
- * actions. Reuses the existing `ExportMenu` (map image export) whenever the
- * report map is mounted, plus a raw-JSON download that always works.
+ * Report masthead: identity, key metadata, report switcher and the map image
+ * export. Reuses the existing `ExportMenu` (map image export) whenever the
+ * report map is mounted.
  */
 
 import { useState, type ReactNode } from "react";
-import { FiDownload, FiImage } from "react-icons/fi";
+import { FiImage } from "react-icons/fi";
 import ExportMenu from "@/components/placeDesk/modals/ExportMenu";
 import type { ReportModel, ReportOption } from "./types";
 import {
@@ -18,20 +18,6 @@ import {
 } from "./parse";
 import { Pill } from "./ui";
 import ReportSelector from "./ReportSelector";
-
-function downloadJson(model: ReportModel) {
-  const blob = new Blob([JSON.stringify(model.raw, null, 2)], {
-    type: "application/json",
-  });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${model.reportId || "placedesk-report"}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1500);
-}
 
 export default function ReportHeader({
   options,
@@ -118,16 +104,6 @@ export default function ReportHeader({
                 </div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={() => model && downloadJson(model)}
-              disabled={!model}
-              title="Download the raw report JSON"
-              className="focusable inline-flex h-[42px] items-center gap-2 rounded-xl border border-line bg-white px-3 text-[12.5px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:opacity-50"
-            >
-              <FiDownload className="h-4 w-4" />
-              JSON
-            </button>
           </div>
         </div>
       </div>

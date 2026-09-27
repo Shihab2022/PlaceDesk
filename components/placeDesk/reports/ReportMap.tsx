@@ -108,14 +108,9 @@ export default function ReportMap({
   mapStyle: string;
 }) {
   const [viewState, setViewState] = useState<ViewState>(() => fitCamera(model));
-  const [toggles, setToggles] = useState<Record<string, boolean>>({});
   const [legendOpen, setLegendOpen] = useState(true);
   // The dashboard keys this component by report id, so a new report remounts
   // the map and `fitCamera` runs as the initial state — no effect needed.
-
-  const enabled = useCallback((key: string) => toggles[key] !== false, [toggles]);
-  const toggle = (key: string) =>
-    setToggles((prev) => ({ ...prev, [key]: prev[key] === false }));
 
   const site = useMemo(
     () =>
@@ -165,6 +160,96 @@ export default function ReportMap({
       ? ({ type: "FeatureCollection", features } as GeoJSON.FeatureCollection)
       : null;
   }, [model.highStreets]);
+
+  /* ---- Layer selection (multi-select) -------------------------------
+     Every layer is an independent toggle: any combination can be on at the
+     same time. All layers start selected so the report opens fully populated,
+     and the panel exposes All / None shortcuts. */
+
+  const legendItems = useMemo(() => {
+    const items: {
+      key: string;
+      label: string;
+      color: string;
+      count?: number;
+      hollow?: boolean;
+    }[] = [];
+
+    if (model.catchment)
+      items.push({ key: "catchment", label: "Catchment Area", color: "#7C4DFF" });
+    if (site)
+      items.push({ key: "site", label: "Report Location", color: "#7C4DFF" });
+    for (const group of POI_GROUPS) {
+      const count = groupedPois.get(group.key)?.length ?? 0;
+      if (count > 0) {
+        items.push({
+          key: `group:${group.key}`,
+          label: group.label,
+          color: group.color,
+          count,
+        });
+      }
+    }
+    if (competitors.length)
+      items.push({
+        key: "competitors",
+        label: "Competitors",
+        color: "#E11D48",
+        hollow: true,
+      });
+    if (anchors.length)
+      items.push({
+        key: "anchors",
+        label: "Anchors / Malls",
+        color: "#D97706",
+        hollow: true,
+      });
+    if (projects.length)
+      items.push({ key: "projects", label: "Projects", color: "#64748B" });
+    if (highStreetFeatures)
+      items.push({
+        key: "highStreets",
+        label: "High Streets",
+        color: "#F59E0B",
+      });
+
+    return items;
+  }, [
+    model.catchment,
+    site,
+    groupedPois,
+    competitors,
+    anchors,
+    projects,
+    highStreetFeatures,
+  ]);
+
+  const allLayerKeys = useMemo(
+    () => legendItems.map((item) => item.key),
+    [legendItems],
+  );
+
+  /* Seeded from the first render's available layers — this component is keyed
+     by report id, so no sync effect is needed. */
+  const [activeLayers, setActiveLayers] = useState<string[]>(() => allLayerKeys);
+
+  const enabled = useCallback(
+    (key: string) => activeLayers.includes(key),
+    [activeLayers],
+  );
+
+  const toggleLayer = useCallback((key: string) => {
+    setActiveLayers((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  }, []);
+
+  const selectAllLayers = useCallback(
+    () => setActiveLayers(allLayerKeys),
+    [allLayerKeys],
+  );
+
+  const clearLayers = useCallback(() => setActiveLayers([]), []);
 
   /* ---- deck.gl layers ---------------------------------------------- */
 
@@ -346,51 +431,6 @@ export default function ReportMap({
   const zoomBy = (delta: number) =>
     setViewState((vs) => ({ ...vs, zoom: Math.min(17, Math.max(3, vs.zoom + delta)) }));
 
-  const legendItems: {
-    key: string;
-    label: string;
-    color: string;
-    count?: number;
-    hollow?: boolean;
-  }[] = [];
-
-  if (model.catchment)
-    legendItems.push({ key: "catchment", label: "Catchment Area", color: "#7C4DFF" });
-  if (site) legendItems.push({ key: "site", label: "Report Location", color: "#7C4DFF" });
-  for (const group of POI_GROUPS) {
-    const count = groupedPois.get(group.key)?.length ?? 0;
-    if (count > 0) {
-      legendItems.push({
-        key: `group:${group.key}`,
-        label: group.label,
-        color: group.color,
-        count,
-      });
-    }
-  }
-  if (competitors.length)
-    legendItems.push({
-      key: "competitors",
-      label: "Competitors",
-      color: "#E11D48",
-      hollow: true,
-    });
-  if (anchors.length)
-    legendItems.push({
-      key: "anchors",
-      label: "Anchors / Malls",
-      color: "#D97706",
-      hollow: true,
-    });
-  if (projects.length)
-    legendItems.push({ key: "projects", label: "Projects", color: "#64748B" });
-  if (highStreetFeatures)
-    legendItems.push({
-      key: "highStreets",
-      label: "High Streets",
-      color: "#F59E0B",
-    });
-
   return (
     <div id="placedesk-map" className="absolute inset-0">
       <DeckGL
@@ -461,6 +501,9 @@ export default function ReportMap({
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
             <FiLayers className="h-3.5 w-3.5" /> Layers
+            <span className="rounded bg-canvas px-1.5 py-0.5 text-[10px] font-semibold tabular-nums text-ink-500">
+              {activeLayers.length}/{allLayerKeys.length}
+            </span>
           </span>
           <button
             type="button"
@@ -473,43 +516,79 @@ export default function ReportMap({
           </button>
         </div>
         {legendOpen && (
-          <ul className="mt-2 space-y-0.5">
-            {legendItems.map((item) => {
-              const on = enabled(item.key);
-              return (
-                <li key={item.key}>
-                  <button
-                    type="button"
-                    onClick={() => toggle(item.key)}
-                    aria-pressed={on}
-                    className={`focusable flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-canvas ${
-                      on ? "" : "opacity-45"
-                    }`}
-                  >
-                    <span
-                      className="h-3 w-3 shrink-0 rounded-full"
-                      style={
-                        item.hollow
-                          ? {
-                              border: `2px solid ${item.color}`,
-                              backgroundColor: "transparent",
-                            }
-                          : { backgroundColor: item.color }
-                      }
-                    />
-                    <span className="min-w-0 flex-1 truncate text-[11.5px] text-ink-700">
-                      {item.label}
-                    </span>
-                    {item.count !== undefined && (
-                      <span className="shrink-0 text-[10.5px] tabular-nums text-ink-400">
-                        {item.count.toLocaleString("en-US")}
+          <>
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={selectAllLayers}
+                disabled={activeLayers.length === allLayerKeys.length}
+                className="focusable flex-1 rounded-md border border-line px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={clearLayers}
+                disabled={activeLayers.length === 0}
+                className="focusable flex-1 rounded-md border border-line px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                None
+              </button>
+            </div>
+            <ul className="mt-1.5 space-y-0.5">
+              {legendItems.map((item) => {
+                const on = enabled(item.key);
+                return (
+                  <li key={item.key}>
+                    <button
+                      type="button"
+                      onClick={() => toggleLayer(item.key)}
+                      aria-pressed={on}
+                      className={`focusable flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-canvas ${
+                        on ? "" : "opacity-45"
+                      }`}
+                    >
+                      <span
+                        className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-[4px] border text-[9px] leading-none"
+                        style={{
+                          borderColor: on ? item.color : "#c9ccd4",
+                          backgroundColor: on ? item.color : "transparent",
+                          color: "#ffffff",
+                        }}
+                        aria-hidden="true"
+                      >
+                        {on ? "✓" : ""}
                       </span>
-                    )}
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={
+                          item.hollow
+                            ? {
+                                border: `2px solid ${item.color}`,
+                                backgroundColor: "transparent",
+                              }
+                            : { backgroundColor: item.color }
+                        }
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[11.5px] text-ink-700">
+                        {item.label}
+                      </span>
+                      {item.count !== undefined && (
+                        <span className="shrink-0 text-[10.5px] tabular-nums text-ink-400">
+                          {item.count.toLocaleString("en-US")}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {activeLayers.length === 0 && (
+              <p className="mt-1.5 rounded-md bg-canvas px-2 py-1.5 text-[10.5px] text-ink-500">
+                No layers selected — pick one or more to draw the map.
+              </p>
+            )}
+          </>
         )}
       </div>
 

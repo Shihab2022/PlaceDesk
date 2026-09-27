@@ -461,10 +461,13 @@ export function ScatterPlot({
   points,
   xLabel,
   yLabel,
-  height = 240,
+  height = 260,
   formatX = (v: number) => String(v),
   formatY = (v: number) => String(v),
   onPointClick,
+  quadrants = null,
+  labelTop = 0,
+  radius = 6,
 }: {
   points: ScatterPoint[];
   xLabel: string;
@@ -473,24 +476,52 @@ export function ScatterPlot({
   formatX?: (value: number) => string;
   formatY?: (value: number) => string;
   onPointClick?: (point: ScatterPoint) => void;
+  /**
+   * Median crosshair — draws the quadrant guides and their captions.
+   * Pass `{ x, y }` with the median values of the plotted points.
+   */
+  quadrants?: { x: number; y: number } | null;
+  /** How many of the top-scoring points also get an inline name label. */
+  labelTop?: number;
+  /** Base bubble radius (in viewBox units). */
+  radius?: number;
 }) {
   if (points.length < 2) return null;
   const width = 640;
-  const padX = 44;
-  const padTop = 14;
-  const padBottom = 34;
+  const padX = 54;
+  const padTop = 18;
+  const padBottom = 46;
   const plotH = height - padTop - padBottom;
+  const plotW = width - padX * 2;
   const maxX = niceMax(Math.max(...points.map((p) => p.x)));
   const maxY = niceMax(Math.max(...points.map((p) => p.y)));
   const minY = Math.min(0, Math.min(...points.map((p) => p.y)));
   const spanY = maxY - minY || 1;
+
+  const xAt = (value: number) => padX + (maxX > 0 ? value / maxX : 0) * plotW;
+  const yAt = (value: number) =>
+    padTop + plotH - ((value - minY) / spanY) * plotH;
+
+  const guideX = quadrants ? xAt(quadrants.x) : null;
+  const guideY = quadrants ? yAt(quadrants.y) : null;
+
+  /* Highest-scoring points get an inline label so the chart reads without
+     hovering every bubble. */
+  const labelled = new Set(
+    labelTop > 0
+      ? [...points]
+          .sort((a, b) => b.y - a.y)
+          .slice(0, labelTop)
+          .map((p) => p.key ?? p.label)
+      : [],
+  );
 
   return (
     <svg
       viewBox={`0 0 ${width} ${height}`}
       className="h-auto w-full"
       role="img"
-      aria-label={`${yLabel} versus ${xLabel}`}
+      aria-label={`${yLabel} versus ${xLabel} — ${points.length} points`}
     >
       {[0, 0.5, 1].map((t) => {
         const y = padTop + plotH * (1 - t);
@@ -517,12 +548,12 @@ export function ScatterPlot({
         );
       })}
       {[0, 0.5, 1].map((t) => {
-        const x = padX + (width - padX * 2) * t;
+        const x = padX + plotW * t;
         return (
           <text
             key={t}
             x={x}
-            y={height - 16}
+            y={height - 32}
             textAnchor="middle"
             fontSize="9"
             fill="#8a8f98"
@@ -531,22 +562,100 @@ export function ScatterPlot({
           </text>
         );
       })}
-      <text x={width / 2} y={height - 3} textAnchor="middle" fontSize="9.5" fill="#666666">
+      <text
+        x={width / 2}
+        y={height - 14}
+        textAnchor="middle"
+        fontSize="9.5"
+        fill="#666666"
+      >
         {xLabel}
       </text>
+      <text
+        x={14}
+        y={padTop + plotH / 2}
+        textAnchor="middle"
+        fontSize="9.5"
+        fill="#666666"
+        transform={`rotate(-90 14 ${padTop + plotH / 2})`}
+      >
+        {yLabel}
+      </text>
+
+      {/* Median crosshair → quadrant guides (high/low traffic × high/low score) */}
+      {guideX !== null && guideY !== null && quadrants && (
+        <g>
+          <line
+            x1={guideX}
+            x2={guideX}
+            y1={padTop}
+            y2={padTop + plotH}
+            stroke="#C7CAD4"
+            strokeDasharray="4 4"
+          />
+          <line
+            x1={padX}
+            x2={padX + plotW}
+            y1={guideY}
+            y2={guideY}
+            stroke="#C7CAD4"
+            strokeDasharray="4 4"
+          />
+          <text
+            x={guideX + 4}
+            y={padTop + 10}
+            fontSize="9"
+            fill="#8a8f98"
+            stroke="#ffffff"
+            strokeWidth="2.5"
+            paintOrder="stroke"
+          >
+            median {formatX(quadrants.x)}
+          </text>
+          <text
+            x={padX + 4}
+            y={guideY - 5}
+            fontSize="9"
+            fill="#8a8f98"
+            stroke="#ffffff"
+            strokeWidth="2.5"
+            paintOrder="stroke"
+          >
+            median {formatY(quadrants.y)}
+          </text>
+          <text
+            x={padX + plotW - 2}
+            y={padTop + 10}
+            textAnchor="end"
+            fontSize="8.5"
+            fill="#c2c5cd"
+          >
+            HIGH TRAFFIC · HIGH SCORE
+          </text>
+          <text
+            x={padX + 2}
+            y={padTop + plotH - 6}
+            fontSize="8.5"
+            fill="#c2c5cd"
+          >
+            LOW TRAFFIC · LOW SCORE
+          </text>
+        </g>
+      )}
       {points.map((p, i) => {
-        const cx = padX + (maxX > 0 ? p.x / maxX : 0) * (width - padX * 2);
-        const cy = padTop + plotH - ((p.y - minY) / spanY) * plotH;
+        const cx = xAt(p.x);
+        const cy = yAt(p.y);
+        const pointKey = p.key ?? p.label;
         return (
           <g
-            key={p.key ?? p.label}
+            key={pointKey}
             className={onPointClick ? "cursor-pointer" : undefined}
             onClick={onPointClick ? () => onPointClick(p) : undefined}
           >
             <circle
               cx={cx}
               cy={cy}
-              r="6"
+              r={radius}
               fill={p.color ?? CHART_COLORS[i % CHART_COLORS.length]}
               fillOpacity={0.85}
               stroke="#fff"
@@ -554,6 +663,19 @@ export function ScatterPlot({
             >
               <title>{`${p.label} — ${xLabel}: ${formatX(p.x)}, ${yLabel}: ${formatY(p.y)}`}</title>
             </circle>
+            {labelled.has(pointKey) && (
+              <text
+                x={cx + radius + 3}
+                y={cy + 3}
+                fontSize="9"
+                fill="#343434"
+                stroke="#ffffff"
+                strokeWidth="2.5"
+                paintOrder="stroke"
+              >
+                {truncate(p.label, 18)}
+              </text>
+            )}
           </g>
         );
       })}

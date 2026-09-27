@@ -2,6 +2,8 @@
 
 import type { CityDef } from "../data";
 import { useAppStore } from "../app/AppStoreContext";
+import { reportDataLayerConfig } from "@/constant/mapConfilg";
+import { FiExternalLink, FiFileText } from "react-icons/fi";
 
 export default function WorkspaceSection({
   section,
@@ -100,7 +102,76 @@ export default function WorkspaceSection({
           </div>
         )}
 
-        {(section === "reports" || section === "saved" || section === "settings") && (
+        {section === "reports" && (
+          <div className="mt-6">
+            <div className="rounded-xl border border-line bg-white p-5">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-ink-900">Available reports</h3>
+                  <p className="mt-1 text-[13px] text-ink-500">
+                    {reportDataLayerConfig.length} location-intelligence report
+                    {reportDataLayerConfig.length === 1 ? "" : "s"} generated for{" "}
+                    {city.label}. Every card opens the report in a new tab and is
+                    deep-linked through the URL (
+                    <span className="font-mono text-ink-700">
+                      ?tab=reports&amp;reportId=…
+                    </span>
+                    ).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="focusable shrink-0 rounded-lg border border-line px-3 py-2 text-[12.5px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700"
+                  onClick={() => onNavigate("maps")}
+                >
+                  Back to map
+                </button>
+              </div>
+            </div>
+
+            {reportDataLayerConfig.length ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {reportDataLayerConfig.map((report) => (
+                  <a
+                    key={report.id}
+                    href={`/dashboard?tab=reports&reportId=${encodeURIComponent(report.id)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="focusable group flex flex-col rounded-xl border border-line bg-white p-4 transition-all hover:-translate-y-px hover:border-brand-300 hover:shadow-md"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+                        style={{ backgroundColor: `${report.color}1A`, color: report.color }}
+                      >
+                        <FiFileText className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1 truncate font-semibold text-ink-900">
+                        {report.name}
+                      </span>
+                    </span>
+                    <span
+                      className="mt-3 block truncate font-mono text-[11px] text-ink-400"
+                      title={report.targetPath}
+                    >
+                      {report.targetPath}
+                    </span>
+                    <span className="mt-4 flex items-center justify-between gap-2 border-t border-line/60 pt-3 text-[12px] font-medium text-brand-700">
+                      Open report
+                      <FiExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl border border-dashed border-line bg-white p-6 text-center text-[13px] text-ink-500">
+                No reports are configured yet.
+              </div>
+            )}
+          </div>
+        )}
+
+        {(section === "saved" || section === "settings") && (
           <div className="mt-6 rounded-xl border border-line bg-white p-6">
             <h3 className="font-semibold capitalize text-ink-900">{title} workspace</h3>
             <p className="mt-2 text-[13px] text-ink-500">Connected to the active city, layers, filters, and viewport.</p>

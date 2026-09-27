@@ -4,14 +4,16 @@
  * `Dashboard -> Reports` — the report workspace.
  *
  * **Everything lives on one continuously scrollable page.** The order is:
- *   1. report header (selector + export)
+ *   1. report header (selector + map image export)
  *   2. location details
  *   3. the deck.gl catchment map
  *   4. KPI tiles
- *   5. section navigation cards  →  deep-links (`?report=&section=`)
+ *   5. section navigation cards  →  deep-links (`?reportId=&section=`)
  *   6. every section rendered in full, each with its own anchor
  *
- * Clicking a navigation card writes `?report=<id>&section=<key>` to the URL
+ * The page is reached as `/dashboard?tab=reports&reportId=<id>` — the report
+ * cards in the Reports workspace link here with `target="_blank"`. Clicking a
+ * navigation card writes `?tab=reports&reportId=<id>&section=<key>` to the URL
  * (so the state is shareable / bookmarkable and the back button works) and
  * scrolls the matching section into view.
  *
@@ -20,6 +22,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiArrowLeft } from "react-icons/fi";
 import { useAppStore } from "../app/AppStoreContext";
 import { MAP_THEMES } from "../data";
 import { useReports } from "./useReports";
@@ -62,7 +65,7 @@ function isSectionKey(value: string | null): value is ReportSectionKey {
   return value !== null && (SECTION_IDS as string[]).includes(value);
 }
 
-/** Read `report` / `section` straight from `window.location` (client-only). */
+/** Read `reportId` / `section` straight from `window.location` (client-only). */
 function readUrlState(): {
   reportId: string | null;
   section: ReportSectionKey | null;
@@ -71,7 +74,8 @@ function readUrlState(): {
   const params = new URLSearchParams(window.location.search);
   const rawSection = params.get("section");
   return {
-    reportId: params.get("report"),
+    /* `report` is the legacy param — still honoured for old bookmarks. */
+    reportId: params.get("reportId") ?? params.get("report"),
     section: isSectionKey(rawSection) ? rawSection : null,
   };
 }
@@ -96,11 +100,14 @@ export default function ReportDashboard() {
   );
 
   /* Reflect the current report + section in the URL. `replaceState` keeps the
-     history clean while still making the state shareable / bookmarkable. */
+     history clean while still making the state shareable / bookmarkable.
+     `tab=reports` keeps the deep link self-describing for a fresh tab. */
   useEffect(() => {
     if (typeof window === "undefined" || !selected) return;
     const url = new URL(window.location.href);
-    url.searchParams.set("report", selected.reportId);
+    url.searchParams.set("tab", "reports");
+    url.searchParams.set("reportId", selected.reportId);
+    url.searchParams.delete("report");
     if (activeSection) url.searchParams.set("section", activeSection);
     else url.searchParams.delete("section");
     window.history.replaceState(null, "", url.toString());
@@ -144,14 +151,30 @@ export default function ReportDashboard() {
 
   /* ---- Top bar (always visible) ------------------------------------ */
   const topBar = (
-    <ReportHeader
-      options={options}
-      selectedKey={selectedKey}
-      onSelect={select}
-      status={status}
-      model={selected}
-      mapAvailable
-    />
+    <div className="space-y-3">
+      {/* Back to the report list (`/?tab=reports`) — the cards there open the
+          detail view in a new tab, so this is the way back to the list. */}
+      <div className="flex items-center gap-2 text-[11.5px] text-ink-500">
+        <a
+          href="/dashboard?tab=reports"
+          className="focusable inline-flex items-center gap-1.5 rounded-md font-medium text-brand-700 transition-colors hover:text-brand-800 hover:underline"
+        >
+          <FiArrowLeft className="h-3.5 w-3.5" />
+          All reports
+        </a>
+        <span aria-hidden="true">·</span>
+        <span className="truncate">Report workspace</span>
+      </div>
+
+      <ReportHeader
+        options={options}
+        selectedKey={selectedKey}
+        onSelect={select}
+        status={status}
+        model={selected}
+        mapAvailable
+      />
+    </div>
   );
 
   /* ---- Non-ready states -------------------------------------------- */

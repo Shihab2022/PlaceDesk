@@ -2,7 +2,6 @@
 
 /** Overview: site/catchment facts, high-street clusters and projects. */
 
-import { useState } from "react";
 import type { ReportModel } from "../types";
 import {
   formatArea,
@@ -12,14 +11,17 @@ import {
   formatInt,
   formatNumber,
 } from "../parse";
-import { EmptyState, KeyValueList, PaginationBar, SectionCard } from "../ui";
-
-const CLUSTER_PAGE_SIZE = 10;
-const PROJECT_PAGE_SIZE = 20;
+import {
+  EmptyState,
+  KeyValueList,
+  PaginationBar,
+  SectionCard,
+  usePagination,
+} from "../ui";
 
 export default function OverviewTab({ model }: { model: ReportModel }) {
-  const [clusterPage, setClusterPage] = useState(0);
-  const [projectPage, setProjectPage] = useState(0);
+  const clusters = usePagination();
+  const projects = usePagination();
 
   const siteFacts = [
     { label: "Site name", value: model.siteName },
@@ -71,12 +73,12 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
                 <tbody className="divide-y divide-line">
                   {model.highStreets
                     .slice(
-                      clusterPage * CLUSTER_PAGE_SIZE,
-                      (clusterPage + 1) * CLUSTER_PAGE_SIZE,
+                      clusters.page * clusters.pageSize,
+                      (clusters.page + 1) * clusters.pageSize,
                     )
                     .map((street, i) => (
                       <tr
-                        key={`${street.name}-${clusterPage * CLUSTER_PAGE_SIZE + i}`}
+                        key={`${street.name}-${clusters.page * clusters.pageSize + i}`}
                         className="hover:bg-canvas/60"
                       >
                         <td className="px-3 py-2 font-medium text-ink-900">
@@ -113,10 +115,11 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
               </table>
             </div>
             <PaginationBar
-              page={clusterPage}
+              page={clusters.page}
               totalItems={model.highStreets.length}
-              pageSize={CLUSTER_PAGE_SIZE}
-              onPageChange={setClusterPage}
+              pageSize={clusters.pageSize}
+              onPageChange={clusters.setPage}
+              onPageSizeChange={clusters.changePageSize}
             />
           </div>
         ) : (
@@ -146,8 +149,8 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
                 <tbody className="divide-y divide-line">
                   {model.projects.projects
                     .slice(
-                      projectPage * PROJECT_PAGE_SIZE,
-                      (projectPage + 1) * PROJECT_PAGE_SIZE,
+                      projects.page * projects.pageSize,
+                      (projects.page + 1) * projects.pageSize,
                     )
                     .map((project) => (
                       <tr key={project.id} className="hover:bg-canvas/60">
@@ -166,10 +169,11 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
               </table>
             </div>
             <PaginationBar
-              page={projectPage}
+              page={projects.page}
               totalItems={model.projects.projects.length}
-              pageSize={PROJECT_PAGE_SIZE}
-              onPageChange={setProjectPage}
+              pageSize={projects.pageSize}
+              onPageChange={projects.setPage}
+              onPageSizeChange={projects.changePageSize}
             />
           </div>
         ) : (

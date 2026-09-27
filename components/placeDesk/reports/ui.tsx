@@ -6,7 +6,7 @@
  * so the dashboard stays light despite the heavy data payloads.
  */
 
-import { useId, useState, type ReactNode } from "react";
+import { useCallback, useId, useState, type ReactNode } from "react";
 import { FiAlertTriangle, FiChevronDown, FiInbox, FiRefreshCw } from "react-icons/fi";
 
 export function Card({
@@ -360,17 +360,47 @@ export function BarRow({
   return <div className="px-1 py-1.5">{body}</div>;
 }
 
+/** Rows shown per page by default — every report table respects this. */
+export const DEFAULT_PAGE_SIZE = 10;
+
+/** Sizes offered by the rows-per-page toggle in `PaginationBar`. */
+export const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+/**
+ * Page + rows-per-page state for one table.
+ * Changing the page size always returns to the first page, so the reader is
+ * never stranded on a page that no longer exists.
+ */
+export function usePagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const changePageSize = useCallback((size: number) => {
+    setPageSize(size);
+    setPage(0);
+  }, []);
+  return { page, pageSize, setPage, changePageSize };
+}
+
+/**
+ * Shared pagination footer: "showing x–y of z", rows-per-page toggles and
+ * first / prev / page-number / next / last controls.
+ * Pass `onPageSizeChange` to enable the rows-per-page toggle.
+ */
 export function PaginationBar({
   page,
   totalItems,
   pageSize,
   onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = PAGE_SIZE_OPTIONS,
   className = "",
 }: {
   page: number;
   totalItems: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  pageSizeOptions?: number[];
   className?: string;
 }) {
   const pageCount = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -387,7 +417,9 @@ export function PaginationBar({
     if (next !== safePage) onPageChange(next);
   };
 
-  if (pageCount <= 1 && totalItems <= pageSize) {
+  /* With a rows-per-page toggle the bar stays visible even on a single page,
+     otherwise the reader could never switch back to a smaller page size. */
+  if (totalItems === 0 || (pageCount <= 1 && !onPageSizeChange)) {
     return null;
   }
 
@@ -407,6 +439,30 @@ export function PaginationBar({
       </span>
 
       <div className="flex flex-wrap items-center gap-1.5">
+        {onPageSizeChange && (
+          <span className="mr-1 flex items-center gap-1">
+            <span className="text-ink-500">Rows</span>
+            <span className="flex overflow-hidden rounded-lg border border-line">
+              {pageSizeOptions.map((size) => (
+                <button
+                  key={size}
+                  type="button"
+                  onClick={() => onPageSizeChange(size)}
+                  aria-pressed={pageSize === size}
+                  aria-label={`Show ${size} rows per page`}
+                  title={`Show ${size} rows per page`}
+                  className={`focusable h-7 px-2 text-[11.5px] font-semibold tabular-nums transition-colors ${
+                    pageSize === size
+                      ? "bg-ink-900 text-white"
+                      : "bg-white text-ink-500 hover:text-brand-700"
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </span>
+          </span>
+        )}
         <button
           type="button"
           onClick={() => onPageChange(0)}

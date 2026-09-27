@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import dynamic from "next/dynamic";
 import { FiBarChart2, FiChevronsRight } from "react-icons/fi";
 import Header from "@/components/placeDesk/layout/Header";
@@ -52,6 +58,70 @@ function MapSkeleton() {
   );
 }
 
+/** Sidebar sections that can be deep-linked through the `?tab=` query param. */
+const TAB_IDS = [
+  "overview",
+  "maps",
+  "layers",
+  "data-sources",
+  "analytics",
+  "locations",
+  "reports",
+  "saved",
+  "support",
+  "settings",
+];
+
+/**
+ * The dashboard URL is an external store (`?tab=<section>&reportId=<id>`),
+ * read through `useSyncExternalStore` so it stays the single source of truth
+ * without any setState-inside-an-effect or hydration mismatch.
+ */
+const URL_CHANGE_EVENT = "placedesk:url-change";
+
+/** `history.replaceState` fires no event, so publish the change ourselves. */
+function notifyUrlChange() {
+  window.dispatchEvent(new Event(URL_CHANGE_EVENT));
+}
+
+function subscribeToUrl(onChange: () => void) {
+  window.addEventListener("popstate", onChange);
+  window.addEventListener(URL_CHANGE_EVENT, onChange);
+  return () => {
+    window.removeEventListener("popstate", onChange);
+    window.removeEventListener(URL_CHANGE_EVENT, onChange);
+  };
+}
+
+function getUrlSearch(): string {
+  return window.location.search;
+}
+
+/** Server snapshot — the prerender has no URL state, so hydration matches. */
+function getServerSearch(): string {
+  return "";
+}
+
+function parseUrlState(search: string): {
+  tab: string | null;
+  reportId: string | null;
+} {
+  const params = new URLSearchParams(search);
+  const rawTab = params.get("tab");
+  return {
+    tab: rawTab && TAB_IDS.includes(rawTab) ? rawTab : null,
+    reportId: params.get("reportId"),
+  };
+}
+
+/** Rewrite the query string in place (no history entry) and publish it. */
+function writeUrlState(mutate: (params: URLSearchParams) => void) {
+  const url = new URL(window.location.href);
+  mutate(url.searchParams);
+  window.history.replaceState(null, "", url.toString());
+  notifyUrlChange();
+}
+
 export default function HomePage() {
   return (
     <AppStoreProvider>
@@ -62,7 +132,18 @@ export default function HomePage() {
 
 function Workspace() {
   /* ---- UI chrome ---- */
-  const [navActive, setNavActive] = useState("maps");
+  /* Routing lives in the URL: `?tab=<section>` + `?reportId=<id>`.
+     The URL is the source of truth; the sidebar and the report cards only
+     rewrite it (see `navigate` / `writeUrlState`). */
+  const search = useSyncExternalStore(
+    subscribeToUrl,
+    getUrlSearch,
+    getServerSearch,
+  );
+  const urlState = useMemo(() => parseUrlState(search), [search]);
+  /* `?reportId=` without `?tab=` still means "open that report". */
+  const navActive = urlState.tab ?? (urlState.reportId ? "reports" : "maps");
+  const reportId = navActive === "reports" ? urlState.reportId : null;
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [addDatasetOpen, setAddDatasetOpen] = useState(false);
@@ -116,6 +197,19 @@ function Workspace() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  /* ---- Query-based routing (`?tab=` / `?reportId=`) ---------------- */
+
+  /* Sidebar navigation: rewrites the URL, which re-renders the workspace.
+     The Reports item always lands on the report list — the cards there open a
+     report in a new tab via `/dashboard?tab=reports&reportId=<id>`. */
+  const navigate = useCallback((section: string) => {
+    writeUrlState((params) => {
+      if (section === "maps") params.delete("tab");
+      else params.set("tab", section);
+      params.delete("reportId");
+    });
   }, []);
 
   const activeLayer = useMemo(
@@ -221,7 +315,7 @@ function Workspace() {
         <Sidebar
           active={navActive}
           collapsed={collapsed}
-          onNavigate={setNavActive}
+          onNavigate={navigate}
           onToggle={() => setCollapsed((v) => !v)}
         />
 
@@ -235,14 +329,22 @@ function Workspace() {
             saved={saved}
           />
           {navActive === "reports" ? (
-            <DynamicReportDashboard />
+            reportId ? (
+              <DynamicReportDashboard />
+            ) : (
+              <WorkspaceSection
+                section="reports"
+                city={city}
+                onNavigate={navigate}
+              />
+            )
           ) : (
             <>
           {navActive !== "maps" && (
             <WorkspaceSection
               section={navActive}
               city={city}
-              onNavigate={setNavActive}
+              onNavigate={navigate}
             />
           )}
 

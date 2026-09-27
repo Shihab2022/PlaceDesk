@@ -15,11 +15,15 @@ import {
   formatNumber,
   humanizeKey,
 } from "../parse";
-import { EmptyState, PaginationBar, SectionCard } from "../ui";
+import {
+  EmptyState,
+  PaginationBar,
+  SectionCard,
+  usePagination,
+} from "../ui";
 import { ScatterPlot } from "../charts";
 
 type SortKey = "reviews" | "performance" | "distance" | "votes" | "name";
-const PAGE_SIZE = 25;
 
 export default function BrandsTab({
   model,
@@ -32,7 +36,7 @@ export default function BrandsTab({
   const [sort, setSort] = useState<SortKey>("reviews");
   const [scoredOnly, setScoredOnly] = useState(false);
   const [geoOnly, setGeoOnly] = useState(false);
-  const [page, setPage] = useState(0);
+  const table = usePagination();
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -82,30 +86,65 @@ export default function BrandsTab({
     [model.brands],
   );
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const safePage = Math.min(page, pageCount - 1);
-  const pageRows = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  /* Median crosshair values — drawn as quadrant guides by the scatter plot. */
+  const medians = useMemo(() => {
+    if (scatterPoints.length < 2) return null;
+    const median = (list: number[]) => {
+      const sorted = [...list].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2
+        ? sorted[mid]
+        : (sorted[mid - 1] + sorted[mid]) / 2;
+    };
+    return {
+      x: median(scatterPoints.map((p) => p.x)),
+      y: median(scatterPoints.map((p) => p.y)),
+    };
+  }, [scatterPoints]);
 
-  const resetPage = () => setPage(0);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / table.pageSize));
+  const safePage = Math.min(table.page, pageCount - 1);
+  const pageRows = filtered.slice(
+    safePage * table.pageSize,
+    (safePage + 1) * table.pageSize,
+  );
+
+  const resetPage = () => table.setPage(0);
 
   return (
     <div className="space-y-4">
       <SectionCard
         title="Brand performance scatter"
-        subtitle={`${formatInt(scatterPoints.length)} brands with both reviews/day and performance score`}
+        subtitle={
+          medians
+            ? `${formatInt(scatterPoints.length)} scored brands · median ${formatDecimal(medians.x, 1)} rev/day & ${formatDecimal(medians.y, 1)} score`
+            : `${formatInt(scatterPoints.length)} brands with both reviews/day and performance score`
+        }
       >
         {scatterPoints.length >= 2 ? (
-          <ScatterPlot
-            points={scatterPoints}
-            xLabel="Reviews per day"
-            yLabel="Performance score"
-            formatX={(v) => formatDecimal(v, 1)}
-            formatY={(v) => formatDecimal(v, 1)}
-            onPointClick={(point) => {
-              const brand = model.brands.find((b) => b.id === point.key);
-              if (brand) onOpenBrand(brand);
-            }}
-          />
+          <div className="space-y-3">
+            <ScatterPlot
+              points={scatterPoints}
+              xLabel="Reviews per day"
+              yLabel="Performance score"
+              height={300}
+              labelTop={6}
+              quadrants={medians}
+              formatX={(v) => formatDecimal(v, 1)}
+              formatY={(v) => formatDecimal(v, 1)}
+              onPointClick={(point) => {
+                const brand = model.brands.find((b) => b.id === point.key);
+                if (brand) onOpenBrand(brand);
+              }}
+            />
+            <p className="text-[11.5px] text-ink-500">
+              Dashed lines mark the catchment medians, so each bubble sits in a
+              quadrant: right of the vertical line is above-median footfall,
+              above the horizontal line is above-median performance. The six
+              top-scoring brands are labelled — select any bubble to open the
+              brand drawer.
+            </p>
+          </div>
         ) : (
           <EmptyState
             title="Not enough scored brands"
@@ -193,7 +232,7 @@ export default function BrandsTab({
               </thead>
               <tbody className="divide-y divide-line">
                 {pageRows.map((brand, i) => {
-                  const rank = safePage * PAGE_SIZE + i + 1;
+                  const rank = safePage * table.pageSize + i + 1;
                   return (
                     <tr
                       key={`${brand.id}-${rank}`}
@@ -260,8 +299,9 @@ export default function BrandsTab({
         <PaginationBar
           page={safePage}
           totalItems={filtered.length}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
+          pageSize={table.pageSize}
+          onPageChange={table.setPage}
+          onPageSizeChange={table.changePageSize}
         />
       </SectionCard>
     </div>

@@ -5,7 +5,7 @@
  * competitor-domain footprint from the feed.
  */
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { BusinessRecord, ReportModel } from "../types";
 import {
   formatDecimal,
@@ -13,9 +13,12 @@ import {
   formatInt,
   humanizeKey,
 } from "../parse";
-import { EmptyState, PaginationBar, SectionCard } from "../ui";
-
-const PAGE_SIZE = 25;
+import {
+  EmptyState,
+  PaginationBar,
+  SectionCard,
+  usePagination,
+} from "../ui";
 
 function CompetitorTable({
   rows,
@@ -26,8 +29,11 @@ function CompetitorTable({
   accent: string;
   typeLabel: string;
 }) {
-  const [page, setPage] = useState(0);
-  const shown = rows.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+  const table = usePagination();
+  const shown = rows.slice(
+    table.page * table.pageSize,
+    (table.page + 1) * table.pageSize,
+  );
 
   if (!rows.length) {
     return <EmptyState title={`No ${typeLabel.toLowerCase()} listed`} />;
@@ -48,7 +54,7 @@ function CompetitorTable({
           </thead>
           <tbody className="divide-y divide-line">
             {shown.map((row, i) => (
-              <tr key={`${row.id}-${page * PAGE_SIZE + i}`} className="hover:bg-canvas/60">
+              <tr key={`${row.id}-${table.page * table.pageSize + i}`} className="hover:bg-canvas/60">
                 <td className="px-3 py-2">
                   <span className="flex items-center gap-2">
                     <span
@@ -80,10 +86,11 @@ function CompetitorTable({
         </table>
       </div>
       <PaginationBar
-        page={page}
+        page={table.page}
         totalItems={rows.length}
-        pageSize={PAGE_SIZE}
-        onPageChange={setPage}
+        pageSize={table.pageSize}
+        onPageChange={table.setPage}
+        onPageSizeChange={table.changePageSize}
       />
     </div>
   );
