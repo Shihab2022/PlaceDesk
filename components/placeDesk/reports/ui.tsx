@@ -381,6 +381,63 @@ export function usePagination(initialPageSize: number = DEFAULT_PAGE_SIZE) {
   return { page, pageSize, setPage, changePageSize };
 }
 
+/** Ranked bar lists and column charts show this many items before expanding. */
+export const DEFAULT_VISIBLE_BARS = 10;
+
+/**
+ * Show-more state for long ranked lists / charts.
+ * Keeps the first `initial` items in view until the reader asks for the rest,
+ * so a 40-category breakdown never buries the rest of the page.
+ */
+export function useExpandable(
+  total: number,
+  initial: number = DEFAULT_VISIBLE_BARS,
+) {
+  const [expanded, setExpanded] = useState(false);
+  const toggle = useCallback(() => setExpanded((v) => !v), []);
+  const visibleCount = expanded ? total : Math.min(initial, total);
+  return { expanded, visibleCount, toggle };
+}
+
+/**
+ * Shared "show all / show top N" toggle for expandable bar lists and charts.
+ * Renders nothing when there is nothing hidden.
+ */
+export function ShowMore({
+  total,
+  visible,
+  expanded,
+  onToggle,
+  noun = "items",
+  className = "",
+}: {
+  total: number;
+  visible: number;
+  expanded: boolean;
+  onToggle: () => void;
+  noun?: string;
+  className?: string;
+}) {
+  if (total <= visible) return null;
+  return (
+    <div className={`flex justify-center pt-3 ${className}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        className="focusable inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-[11.5px] font-semibold text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+      >
+        <FiChevronDown
+          className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
+        />
+        {expanded
+          ? `Show top ${visible}`
+          : `Show all ${total.toLocaleString("en-US")} ${noun}`}
+      </button>
+    </div>
+  );
+}
+
 /**
  * Shared pagination footer: "showing x–y of z", rows-per-page toggles and
  * first / prev / page-number / next / last controls.

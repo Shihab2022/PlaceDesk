@@ -1,29 +1,30 @@
 "use client";
 
 /**
- * `Dashboard -> Reports` — the report workspace.
+ * `Reports -> report` — the report workspace (route `/report/<reportId>`).
  *
  * **Everything lives on one continuously scrollable page.** The order is:
  *   1. report header (selector + map image export)
- *   2. location details
- *   3. the deck.gl catchment map
+ *   2. the deck.gl catchment map — the hero, first content block
+ *   3. location details
  *   4. KPI tiles
- *   5. section navigation cards  →  deep-links (`?reportId=&section=`)
+ *   5. section navigation cards  →  deep-links (`?section=`)
  *   6. every section rendered in full, each with its own anchor
  *
- * The page is reached as `/dashboard?tab=reports&reportId=<id>` — the report
- * cards in the Reports workspace link here with `target="_blank"`. Clicking a
- * navigation card writes `?tab=reports&reportId=<id>&section=<key>` to the URL
- * (so the state is shareable / bookmarkable and the back button works) and
- * scrolls the matching section into view.
+ * Clicking a navigation card writes `?section=<key>` to the URL (so the state
+ * is shareable / bookmarkable and the back button works) and scrolls the
+ * matching section into view. Switching report navigates to that report's route.
+ *
+ * Deliberately independent of the map workspace store: it only needs the
+ * basemap style, so opening a report never loads the POI layers.
  *
  * Payloads are loaded through the existing `/api/pois` route (see `useReports`).
  */
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FiArrowLeft } from "react-icons/fi";
-import { useAppStore } from "../app/AppStoreContext";
 import { MAP_THEMES } from "../data";
 import { useReports } from "./useReports";
 import type { BusinessRecord } from "./types";
@@ -81,11 +82,24 @@ function readUrlState(): {
 }
 
 
-export default function ReportDashboard() {
-  const store = useAppStore();
+export default function ReportDashboard({
+  reportId = null,
+  mapStyle,
+}: {
+  /** Report to open — the `/report/<reportId>` route segment. */
+  reportId?: string | null;
+  /** Basemap style for the catchment map (defaults to the first theme). */
+  mapStyle?: string;
+}) {
+  const router = useRouter();
 
   /* ---- URL state (report + section) -------------------------------- */
-  const [initialUrl] = useState(readUrlState);
+  /* The report id is the route segment; `?reportId=` is still honoured so
+     older deep links keep working. */
+  const [initialUrl] = useState(() => {
+    const url = readUrlState();
+    return { reportId: reportId ?? url.reportId, section: url.section };
+  });
   const [activeSection, setActiveSection] = useState<ReportSectionKey | null>(
     initialUrl.section,
   );
@@ -94,19 +108,14 @@ export default function ReportDashboard() {
     useReports(initialUrl.reportId);
   const [activeBrand, setActiveBrand] = useState<BusinessRecord | null>(null);
 
-  const theme = useMemo(
-    () => MAP_THEMES.find((t) => t.id === store.mapThemeId) ?? MAP_THEMES[0],
-    [store.mapThemeId],
-  );
+  const selectedMapStyle = mapStyle ?? MAP_THEMES[0].style;
 
-  /* Reflect the current report + section in the URL. `replaceState` keeps the
-     history clean while still making the state shareable / bookmarkable.
-     `tab=reports` keeps the deep link self-describing for a fresh tab. */
+  /* Reflect the current section in the URL. `replaceState` keeps the history
+     clean while still making the state shareable / bookmarkable. */
   useEffect(() => {
     if (typeof window === "undefined" || !selected) return;
     const url = new URL(window.location.href);
-    url.searchParams.set("tab", "reports");
-    url.searchParams.set("reportId", selected.reportId);
+    url.searchParams.delete("reportId");
     url.searchParams.delete("report");
     if (activeSection) url.searchParams.set("section", activeSection);
     else url.searchParams.delete("section");
@@ -149,11 +158,29 @@ export default function ReportDashboard() {
       ?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
+  /**
+   * Switching report: on the dedicated route the report id *is* the URL, so a
+   * different report becomes a navigation (`/report/<id>`) — that keeps the
+   * address bar, the back button and sharing all correct.
+   */
+  const handleSelectReport = useCallback(
+    (key: string) => {
+      const option = options.find((o) => o.key === key);
+      if (!option || option.reportId === initialUrl.reportId) {
+        /* Same report (e.g. picking a second row of the same file). */
+        select(key);
+        return;
+      }
+      router.push(`/report/${encodeURIComponent(option.reportId)}`);
+    },
+    [options, select, router, initialUrl.reportId],
+  );
+
   /* ---- Top bar (always visible) ------------------------------------ */
   const topBar = (
     <div className="space-y-3">
-      {/* Back to the report list (`/?tab=reports`) — the cards there open the
-          detail view in a new tab, so this is the way back to the list. */}
+      {/* Back to the report index — `/dashboard?tab=reports` lists every
+          report as a card and links back into this route. */}
       <div className="flex items-center gap-2 text-[11.5px] text-ink-500">
         <a
           href="/dashboard?tab=reports"
@@ -169,7 +196,7 @@ export default function ReportDashboard() {
       <ReportHeader
         options={options}
         selectedKey={selectedKey}
-        onSelect={select}
+        onSelect={handleSelectReport}
         status={status}
         model={selected}
         mapAvailable
@@ -210,30 +237,24 @@ export default function ReportDashboard() {
           </div>
         )}
 
-        {/* 1 — Location details first */}
-        <ReportLocationCard model={selected} />
-
-        {/* 2 — Then the catchment map */}
-        <section aria-label="Catchment map" className="scroll-mt-24">
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-            <div>
-              <h2 className="text-[16px] font-semibold tracking-tight text-ink-900">
-                Catchment map
-              </h2>
-              <p className="mt-0.5 text-[11.5px] text-ink-500">
-                Toggle layers, hover a marker for details · export the map as an
-                image from the header
-              </p>
-            </div>
-          </div>
+        {/* 1 — The catchment map leads the report */}
+        <ReportSectionShell id="map">
           <div className="relative h-[420px] overflow-hidden rounded-xl border border-line bg-canvas sm:h-[460px] xl:h-[520px]">
             <ReportMapSurface
               key={selected.key}
               model={selected}
-              mapStyle={theme.style}
+              mapStyle={selectedMapStyle}
             />
           </div>
-        </section>
+          <p className="mt-2 text-[11.5px] text-ink-500">
+            Catchment polygon, POIs, competitors and anchors · toggle layers
+            inside the map and use <span className="font-medium text-ink-700">Export</span>{" "}
+            in the header to save the map as an image.
+          </p>
+        </ReportSectionShell>
+
+        {/* 2 — Location details */}
+        <ReportLocationCard model={selected} />
 
         {/* 3 — Key metrics */}
         <ReportKpiCards model={selected} />

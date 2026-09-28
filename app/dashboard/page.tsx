@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { FiBarChart2, FiChevronsRight } from "react-icons/fi";
 import Header from "@/components/placeDesk/layout/Header";
 import Sidebar from "@/components/placeDesk/layout/Sidebar";
@@ -38,14 +39,6 @@ const DynamicMap = dynamic(() => import("@/components/placeDesk/map/MapView"), {
   ssr: false,
   loading: () => <MapSkeleton />,
 });
-
-const DynamicReportDashboard = dynamic(
-  () => import("@/components/placeDesk/reports/ReportDashboard"),
-  {
-    ssr: false,
-    loading: () => <MapSkeleton />,
-  },
-);
 
 function MapSkeleton() {
   return (
@@ -143,7 +136,7 @@ function Workspace() {
   const urlState = useMemo(() => parseUrlState(search), [search]);
   /* `?reportId=` without `?tab=` still means "open that report". */
   const navActive = urlState.tab ?? (urlState.reportId ? "reports" : "maps");
-  const reportId = navActive === "reports" ? urlState.reportId : null;
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [addDatasetOpen, setAddDatasetOpen] = useState(false);
@@ -201,9 +194,16 @@ function Workspace() {
 
   /* ---- Query-based routing (`?tab=` / `?reportId=`) ---------------- */
 
+  /* Legacy deep links (`?tab=reports&reportId=<id>`) now live on their own
+     route: `/report/<id>`. Redirect so old bookmarks keep working. */
+  useEffect(() => {
+    if (navActive !== "reports" || !urlState.reportId) return;
+    router.replace(`/report/${encodeURIComponent(urlState.reportId)}`);
+  }, [navActive, urlState.reportId, router]);
+
   /* Sidebar navigation: rewrites the URL, which re-renders the workspace.
-     The Reports item always lands on the report list — the cards there open a
-     report in a new tab via `/dashboard?tab=reports&reportId=<id>`. */
+     The Reports item always lands on the report index — the cards there open a
+     report on its own route (`/report/<id>`). */
   const navigate = useCallback((section: string) => {
     writeUrlState((params) => {
       if (section === "maps") params.delete("tab");
@@ -329,15 +329,11 @@ function Workspace() {
             saved={saved}
           />
           {navActive === "reports" ? (
-            reportId ? (
-              <DynamicReportDashboard />
-            ) : (
-              <WorkspaceSection
-                section="reports"
-                city={city}
-                onNavigate={navigate}
-              />
-            )
+            <WorkspaceSection
+              section="reports"
+              city={city}
+              onNavigate={navigate}
+            />
           ) : (
             <>
           {navActive !== "maps" && (

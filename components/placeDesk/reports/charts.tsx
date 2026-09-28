@@ -6,7 +6,8 @@
  * charts inherit PlaceDesk's colour tokens directly.
  */
 
-import { useId } from "react";
+import { useId, useState } from "react";
+import { DEFAULT_VISIBLE_BARS, ShowMore } from "./ui";
 
 /** Curated categorical palette (aligned with the POI layer colours). */
 export const CHART_COLORS = [
@@ -146,6 +147,62 @@ export function ColumnChart({
     </svg>
   );
 }
+
+/**
+ * Column chart that opens with the top `initial` series and expands to the
+ * full set on demand. Expanded, the chart becomes horizontally scrollable so
+ * the bars keep a readable width instead of being squeezed together.
+ */
+export function ExpandableColumnChart({
+  data,
+  initial = DEFAULT_VISIBLE_BARS,
+  noun = "bars",
+  height = 190,
+  format,
+  accent,
+}: {
+  data: ChartDatum[];
+  initial?: number;
+  noun?: string;
+  height?: number;
+  format?: (value: number) => string;
+  accent?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  if (!data.length) return null;
+
+  const shown = expanded ? data : data.slice(0, initial);
+  const visible = Math.min(initial, data.length);
+
+  return (
+    <div>
+      <div className={expanded ? "overflow-x-auto pb-1" : undefined}>
+        <div
+          style={
+            expanded
+              ? { minWidth: `${Math.max(640, shown.length * 46)}px` }
+              : undefined
+          }
+        >
+          <ColumnChart
+            data={shown}
+            height={height}
+            format={format}
+            accent={accent}
+          />
+        </div>
+      </div>
+      <ShowMore
+        total={data.length}
+        visible={visible}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+        noun={noun}
+      />
+    </div>
+  );
+}
+
 
 /** Single horizontal stacked bar (weights, shares, composition). */
 export function StackedBar({
@@ -456,7 +513,29 @@ export interface ScatterPoint {
   key?: string;
 }
 
-/** Scatter plot for brand performance (reviews/day vs performance score). */
+/** Named quadrants for the median crosshair (makes the chart self-explanatory). */
+export interface ScatterQuadrantLabels {
+  /** Above median on both axes — the winners. */
+  topRight?: string;
+  /** Above median score, below median volume. */
+  topLeft?: string;
+  /** Above median volume, below median score. */
+  bottomRight?: string;
+  /** Below median on both axes. */
+  bottomLeft?: string;
+}
+
+/**
+ * Brand performance scatter: one bubble per brand, plotted on two axes with an
+ * optional median crosshair that splits the chart into four named quadrants.
+ *
+ * Reading the chart (the UI repeats this next to it):
+ *  - X axis = reviews per day → how much footfall/demand the brand gets.
+ *  - Y axis = performance score → how well it converts that demand.
+ *  - Dashed lines = the medians, so every bubble sits in a quadrant relative
+ *    to the rest of the catchment.
+ *  - Hover shows the brand name, click opens its detail panel.
+ */
 export function ScatterPlot({
   points,
   xLabel,
@@ -466,6 +545,7 @@ export function ScatterPlot({
   formatY = (v: number) => String(v),
   onPointClick,
   quadrants = null,
+  quadrantLabels = null,
   labelTop = 0,
   radius = 6,
 }: {
@@ -481,18 +561,24 @@ export function ScatterPlot({
    * Pass `{ x, y }` with the median values of the plotted points.
    */
   quadrants?: { x: number; y: number } | null;
+  /** Names printed inside each quadrant (only used with `quadrants`). */
+  quadrantLabels?: ScatterQuadrantLabels | null;
   /** How many of the top-scoring points also get an inline name label. */
   labelTop?: number;
   /** Base bubble radius (in viewBox units). */
   radius?: number;
 }) {
+  const [hovered, setHovered] = useState<string | null>(null);
+
   if (points.length < 2) return null;
   const width = 640;
   const padX = 54;
   const padTop = 18;
-  const padBottom = 46;
+  const padBottom = 48;
   const plotH = height - padTop - padBottom;
   const plotW = width - padX * 2;
+  const right = width - padX;
+  const bottom = padTop + plotH;
   const maxX = niceMax(Math.max(...points.map((p) => p.x)));
   const maxY = niceMax(Math.max(...points.map((p) => p.y)));
   const minY = Math.min(0, Math.min(...points.map((p) => p.y)));
@@ -504,6 +590,64 @@ export function ScatterPlot({
 
   const guideX = quadrants ? xAt(quadrants.x) : null;
   const guideY = quadrants ? yAt(quadrants.y) : null;
+
+  /** Tinted quadrant backgrounds + their names, drawn under the bubbles. */
+  const quadrantAreas =
+    guideX !== null && guideY !== null && quadrants
+      ? [
+          {
+            key: "topRight",
+            x: guideX,
+            y: padTop,
+            w: Math.max(right - guideX, 0),
+            h: Math.max(guideY - padTop, 0),
+            fill: "#22C55E",
+            name: quadrantLabels?.topRight ?? "",
+            tx: right - 6,
+            ty: padTop + 12,
+            anchor: "end" as const,
+          },
+          {
+            key: "topLeft",
+            x: padX,
+            y: padTop,
+            w: Math.max(guideX - padX, 0),
+            h: Math.max(guideY - padTop, 0),
+            fill: "#2563EB",
+            name: quadrantLabels?.topLeft ?? "",
+            tx: padX + 6,
+            ty: padTop + 12,
+            anchor: "start" as const,
+          },
+          {
+            key: "bottomRight",
+            x: guideX,
+            y: guideY,
+            w: Math.max(right - guideX, 0),
+            h: Math.max(bottom - guideY, 0),
+            fill: "#F59E0B",
+            name: quadrantLabels?.bottomRight ?? "",
+            tx: right - 6,
+            ty: bottom - 6,
+            anchor: "end" as const,
+          },
+          {
+            key: "bottomLeft",
+            x: padX,
+            y: guideY,
+            w: Math.max(guideX - padX, 0),
+            h: Math.max(bottom - guideY, 0),
+            fill: "#94A3B8",
+            name: quadrantLabels?.bottomLeft ?? "",
+            tx: padX + 6,
+            ty: bottom - 6,
+            anchor: "start" as const,
+          },
+        ]
+      : [];
+
+  /** Five evenly spaced ticks read far better than three. */
+  const tickCount = 4;
 
   /* Highest-scoring points get an inline label so the chart reads without
      hovering every bubble. */
@@ -523,13 +667,39 @@ export function ScatterPlot({
       role="img"
       aria-label={`${yLabel} versus ${xLabel} — ${points.length} points`}
     >
-      {[0, 0.5, 1].map((t) => {
+      {/* Quadrant tints + names (only when a median crosshair is provided) */}
+      {quadrantAreas.map((area) => (
+        <g key={area.key}>
+          <rect
+            x={area.x}
+            y={area.y}
+            width={area.w}
+            height={area.h}
+            fill={area.fill}
+            fillOpacity={0.06}
+          />
+          {area.name && (
+            <text
+              x={area.tx}
+              y={area.ty}
+              textAnchor={area.anchor}
+              fontSize="9"
+              fontWeight="600"
+              fill="#8a8f98"
+            >
+              {area.name}
+            </text>
+          )}
+        </g>
+      ))}
+
+      {Array.from({ length: tickCount + 1 }, (_, i) => i / tickCount).map((t) => {
         const y = padTop + plotH * (1 - t);
         return (
-          <g key={t}>
+          <g key={`y-${t}`}>
             <line
               x1={padX}
-              x2={width - padX}
+              x2={right}
               y1={y}
               y2={y}
               stroke="#E7E8EE"
@@ -547,13 +717,13 @@ export function ScatterPlot({
           </g>
         );
       })}
-      {[0, 0.5, 1].map((t) => {
+      {Array.from({ length: tickCount + 1 }, (_, i) => i / tickCount).map((t) => {
         const x = padX + plotW * t;
         return (
           <text
-            key={t}
+            key={`x-${t}`}
             x={x}
-            y={height - 32}
+            y={height - 34}
             textAnchor="middle"
             fontSize="9"
             fill="#8a8f98"
@@ -603,14 +773,14 @@ export function ScatterPlot({
           />
           <text
             x={guideX + 4}
-            y={padTop + 10}
+            y={padTop + plotH - 4}
             fontSize="9"
             fill="#8a8f98"
             stroke="#ffffff"
             strokeWidth="2.5"
             paintOrder="stroke"
           >
-            median {formatX(quadrants.x)}
+            median {formatX(quadrants.x)} rev/day
           </text>
           <text
             x={padX + 4}
@@ -621,24 +791,7 @@ export function ScatterPlot({
             strokeWidth="2.5"
             paintOrder="stroke"
           >
-            median {formatY(quadrants.y)}
-          </text>
-          <text
-            x={padX + plotW - 2}
-            y={padTop + 10}
-            textAnchor="end"
-            fontSize="8.5"
-            fill="#c2c5cd"
-          >
-            HIGH TRAFFIC · HIGH SCORE
-          </text>
-          <text
-            x={padX + 2}
-            y={padTop + plotH - 6}
-            fontSize="8.5"
-            fill="#c2c5cd"
-          >
-            LOW TRAFFIC · LOW SCORE
+            median {formatY(quadrants.y)} score
           </text>
         </g>
       )}
@@ -646,34 +799,42 @@ export function ScatterPlot({
         const cx = xAt(p.x);
         const cy = yAt(p.y);
         const pointKey = p.key ?? p.label;
+        const isHovered = hovered === pointKey;
+        /* Hovered dots grow and always show their name. */
+        const showLabel = isHovered || labelled.has(pointKey);
         return (
           <g
             key={pointKey}
             className={onPointClick ? "cursor-pointer" : undefined}
             onClick={onPointClick ? () => onPointClick(p) : undefined}
+            onMouseEnter={() => setHovered(pointKey)}
+            onMouseLeave={() =>
+              setHovered((current) => (current === pointKey ? null : current))
+            }
           >
             <circle
               cx={cx}
               cy={cy}
-              r={radius}
+              r={isHovered ? radius + 3 : radius}
               fill={p.color ?? CHART_COLORS[i % CHART_COLORS.length]}
-              fillOpacity={0.85}
+              fillOpacity={isHovered ? 1 : 0.85}
               stroke="#fff"
-              strokeWidth="1.5"
+              strokeWidth={isHovered ? 2 : 1.5}
             >
               <title>{`${p.label} — ${xLabel}: ${formatX(p.x)}, ${yLabel}: ${formatY(p.y)}`}</title>
             </circle>
-            {labelled.has(pointKey) && (
+            {showLabel && (
               <text
-                x={cx + radius + 3}
+                x={cx + radius + 4}
                 y={cy + 3}
                 fontSize="9"
+                fontWeight={isHovered ? "600" : "400"}
                 fill="#343434"
                 stroke="#ffffff"
                 strokeWidth="2.5"
                 paintOrder="stroke"
               >
-                {truncate(p.label, 18)}
+                {truncate(p.label, 20)}
               </text>
             )}
           </g>

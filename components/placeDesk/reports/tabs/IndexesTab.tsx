@@ -15,8 +15,8 @@ import {
   sortMetricsDesc,
   weightToPercent,
 } from "../parse";
-import { BarRow, EmptyState, SectionCard } from "../ui";
-import { ColumnChart, StackedBar } from "../charts";
+import { BarRow, EmptyState, SectionCard, ShowMore, useExpandable } from "../ui";
+import { ExpandableColumnChart, StackedBar } from "../charts";
 
 export default function IndexesTab({ model }: { model: ReportModel }) {
   const grouped = useMemo(
@@ -44,6 +44,11 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
     () => sortMetricsDesc(model.poiCounts),
     [model.poiCounts],
   );
+
+  /* Long bar lists start collapsed at 10 rows — see `ShowMore`. */
+  const fromCountsList = useExpandable(fromCounts.length);
+  const weightsList = useExpandable(weights.length);
+  const countsList = useExpandable(counts.length);
 
   const groupedScale = indexScale(grouped.map((m) => m.value));
   const countScale = indexScale(counts.map((m) => m.value), 10);

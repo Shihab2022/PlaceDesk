@@ -2,8 +2,7 @@
 
 import type { CityDef } from "../data";
 import { useAppStore } from "../app/AppStoreContext";
-import { reportDataLayerConfig } from "@/constant/mapConfilg";
-import { FiExternalLink, FiFileText } from "react-icons/fi";
+import ReportCardGrid from "../reports/ReportCardGrid";
 
 export default function WorkspaceSection({
   section,
@@ -109,13 +108,10 @@ export default function WorkspaceSection({
                 <div className="min-w-0">
                   <h3 className="font-semibold text-ink-900">Available reports</h3>
                   <p className="mt-1 text-[13px] text-ink-500">
-                    {reportDataLayerConfig.length} location-intelligence report
-                    {reportDataLayerConfig.length === 1 ? "" : "s"} generated for{" "}
-                    {city.label}. Every card opens the report in a new tab and is
-                    deep-linked through the URL (
-                    <span className="font-mono text-ink-700">
-                      ?tab=reports&amp;reportId=…
-                    </span>
+                    Location-intelligence reports generated for {city.label}.
+                    Every card summarises one data source — open it for the full
+                    report on its own page (
+                    <span className="font-mono text-ink-700">/report/&lt;id&gt;</span>
                     ).
                   </p>
                 </div>
@@ -129,45 +125,7 @@ export default function WorkspaceSection({
               </div>
             </div>
 
-            {reportDataLayerConfig.length ? (
-              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {reportDataLayerConfig.map((report) => (
-                  <a
-                    key={report.id}
-                    href={`/dashboard?tab=reports&reportId=${encodeURIComponent(report.id)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="focusable group flex flex-col rounded-xl border border-line bg-white p-4 transition-all hover:-translate-y-px hover:border-brand-300 hover:shadow-md"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <span
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-                        style={{ backgroundColor: `${report.color}1A`, color: report.color }}
-                      >
-                        <FiFileText className="h-4 w-4" />
-                      </span>
-                      <span className="min-w-0 flex-1 truncate font-semibold text-ink-900">
-                        {report.name}
-                      </span>
-                    </span>
-                    <span
-                      className="mt-3 block truncate font-mono text-[11px] text-ink-400"
-                      title={report.targetPath}
-                    >
-                      {report.targetPath}
-                    </span>
-                    <span className="mt-4 flex items-center justify-between gap-2 border-t border-line/60 pt-3 text-[12px] font-medium text-brand-700">
-                      Open report
-                      <FiExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                    </span>
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="mt-4 rounded-xl border border-dashed border-line bg-white p-6 text-center text-[13px] text-ink-500">
-                No reports are configured yet.
-              </div>
-            )}
+            <ReportCardGrid />
           </div>
         )}
 

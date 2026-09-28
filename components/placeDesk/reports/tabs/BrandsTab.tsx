@@ -102,6 +102,55 @@ export default function BrandsTab({
     };
   }, [scatterPoints]);
 
+  /**
+   * The four quadrants of the median crosshair, with their brand counts.
+   * Naming + counting them is what turns the plot from "a cloud of dots" into
+   * something readable: it says *which* brands are strong, cheap to win, or
+   * under-performing.
+   */
+  const quadrants = useMemo(() => {
+    if (!medians) return null;
+    const buckets = [
+      {
+        key: "stars",
+        label: "Stars",
+        note: "Above median footfall and above median score — the benchmark to match.",
+        color: "#22C55E",
+        count: 0,
+        match: (p: { x: number; y: number }) => p.x >= medians.x && p.y >= medians.y,
+      },
+      {
+        key: "gems",
+        label: "Hidden gems",
+        note: "Score highly without much footfall yet — quietly strong performers.",
+        color: "#2563EB",
+        count: 0,
+        match: (p: { x: number; y: number }) => p.x < medians.x && p.y >= medians.y,
+      },
+      {
+        key: "watch",
+        label: "Watch list",
+        note: "Busy but scoring below the median — demand is there, conversion is not.",
+        color: "#F59E0B",
+        count: 0,
+        match: (p: { x: number; y: number }) => p.x >= medians.x && p.y < medians.y,
+      },
+      {
+        key: "quiet",
+        label: "Underperformers",
+        note: "Below the median on both axes — the quietest part of the catchment.",
+        color: "#94A3B8",
+        count: 0,
+        match: (p: { x: number; y: number }) => p.x < medians.x && p.y < medians.y,
+      },
+    ];
+    for (const point of scatterPoints) {
+      const bucket = buckets.find((b) => b.match(point));
+      if (bucket) bucket.count += 1;
+    }
+    return buckets;
+  }, [scatterPoints, medians]);
+
   const pageCount = Math.max(1, Math.ceil(filtered.length / table.pageSize));
   const safePage = Math.min(table.page, pageCount - 1);
   const pageRows = filtered.slice(
@@ -117,33 +166,89 @@ export default function BrandsTab({
         title="Brand performance scatter"
         subtitle={
           medians
-            ? `${formatInt(scatterPoints.length)} scored brands · median ${formatDecimal(medians.x, 1)} rev/day & ${formatDecimal(medians.y, 1)} score`
-            : `${formatInt(scatterPoints.length)} brands with both reviews/day and performance score`
+            ? `Each dot is one brand · ${formatInt(scatterPoints.length)} brands with both reviews/day and a performance score`
+            : `${formatInt(scatterPoints.length)} brands with both reviews/day and a performance score`
         }
       >
         {scatterPoints.length >= 2 ? (
-          <div className="space-y-3">
-            <ScatterPlot
-              points={scatterPoints}
-              xLabel="Reviews per day"
-              yLabel="Performance score"
-              height={300}
-              labelTop={6}
-              quadrants={medians}
-              formatX={(v) => formatDecimal(v, 1)}
-              formatY={(v) => formatDecimal(v, 1)}
-              onPointClick={(point) => {
-                const brand = model.brands.find((b) => b.id === point.key);
-                if (brand) onOpenBrand(brand);
-              }}
-            />
-            <p className="text-[11.5px] text-ink-500">
-              Dashed lines mark the catchment medians, so each bubble sits in a
-              quadrant: right of the vertical line is above-median footfall,
-              above the horizontal line is above-median performance. The six
-              top-scoring brands are labelled — select any bubble to open the
-              brand drawer.
-            </p>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_290px]">
+            <div className="min-w-0">
+              <ScatterPlot
+                points={scatterPoints}
+                xLabel="Reviews per day (demand)"
+                yLabel="Performance score"
+                height={320}
+                labelTop={6}
+                quadrants={medians}
+                quadrantLabels={
+                  medians
+                    ? {
+                        topRight: "STARS",
+                        topLeft: "HIDDEN GEMS",
+                        bottomRight: "WATCH LIST",
+                        bottomLeft: "UNDERPERFORMERS",
+                      }
+                    : null
+                }
+                formatX={(v) => formatDecimal(v, 1)}
+                formatY={(v) => formatDecimal(v, 1)}
+                onPointClick={(point) => {
+                  const brand = model.brands.find((b) => b.id === point.key);
+                  if (brand) onOpenBrand(brand);
+                }}
+              />
+            </div>
+
+            {/* How to read it — the plot is only useful with a legend. */}
+            <div className="min-w-0 space-y-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-400">
+                  How to read this
+                </p>
+                <p className="mt-1 text-[11.5px] leading-relaxed text-ink-500">
+                  <span className="font-medium text-ink-700">→ X axis</span> is
+                  demand: how many reviews per day a brand collects.{" "}
+                  <span className="font-medium text-ink-700">↑ Y axis</span> is
+                  performance: how well it scores. The dashed lines are the
+                  catchment medians, so every dot is positioned{" "}
+                  <span className="font-medium text-ink-700">relative to the
+                  others</span>.
+                </p>
+              </div>
+
+              <ul className="space-y-2">
+                {(quadrants ?? []).map((q) => (
+                  <li
+                    key={q.key}
+                    className="flex items-start gap-2.5 rounded-lg border border-line bg-canvas/50 px-3 py-2"
+                  >
+                    <span
+                      className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={{ backgroundColor: q.color }}
+                      aria-hidden
+                    />
+                    <span className="min-w-0">
+                      <span className="flex flex-wrap items-baseline gap-x-2">
+                        <span className="text-[12.5px] font-semibold text-ink-900">
+                          {q.label}
+                        </span>
+                        <span className="text-[11px] font-semibold tabular-nums text-ink-500">
+                          {formatInt(q.count)} brands
+                        </span>
+                      </span>
+                      <span className="mt-0.5 block text-[11px] leading-snug text-ink-500">
+                        {q.note}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="text-[11px] text-ink-400">
+                Hover a dot to read its name · select it to open the brand
+                panel. The six highest-scoring brands are labelled on the chart.
+              </p>
+            </div>
           </div>
         ) : (
           <EmptyState

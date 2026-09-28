@@ -102,18 +102,18 @@ export const SCHEME_CLASSES: Record<
 
 export const REPORT_SECTIONS: ReportSectionMeta[] = [
   {
-    id: "overview",
-    label: "Overview",
-    blurb: "Site identity, catchment facts, high streets and projects",
-    icon: <FiGrid className="h-5 w-5" />,
-    scheme: "brand",
-  },
-  {
     id: "map",
     label: "Map",
     blurb: "Catchment polygon, POIs, competitors and anchors",
     icon: <FiMap className="h-5 w-5" />,
     scheme: "violet",
+  },
+  {
+    id: "overview",
+    label: "Overview",
+    blurb: "Site identity, catchment facts, high streets and projects",
+    icon: <FiGrid className="h-5 w-5" />,
+    scheme: "brand",
   },
   {
     id: "market",
