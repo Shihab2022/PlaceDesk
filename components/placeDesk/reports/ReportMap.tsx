@@ -93,10 +93,9 @@ function poiTooltipHtml(record: BusinessRecord, kindLabel: string): string {
 
 const TOOLTIP_STYLE = {
   backgroundColor: "#ffffff",
-  borderRadius: "12px",
-  padding: "10px 12px",
-  boxShadow: "0 12px 32px rgba(23,23,23,0.16)",
-  border: "1px solid #e6e7ec",
+  borderRadius: "14px",
+  padding: "10px 14px",
+  boxShadow: "0 16px 36px rgba(15,23,42,0.14)",
   color: "#171717",
 };
 
@@ -497,7 +496,7 @@ export default function ReportMap({
       </DeckGL>
 
       {/* Legend / layer toggles */}
-      <div className="absolute left-3 top-3 z-10 w-[218px] rounded-xl border border-line bg-white/95 p-2.5 shadow-lg shadow-ink-900/10 backdrop-blur">
+      <div className="absolute left-3 top-3 z-10 w-[218px] rounded-2xl bg-white/95 p-3 shadow-lg shadow-ink-900/10 backdrop-blur">
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
             <FiLayers className="h-3.5 w-3.5" /> Layers
@@ -517,12 +516,12 @@ export default function ReportMap({
         </div>
         {legendOpen && (
           <>
-            <div className="mt-2 flex items-center gap-1.5">
+            <div className="mt-2.5 flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={selectAllLayers}
                 disabled={activeLayers.length === allLayerKeys.length}
-                className="focusable flex-1 rounded-md border border-line px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="focusable flex-1 rounded-lg bg-canvas px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-600 transition-colors hover:bg-canvas-subtle hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 All
               </button>
@@ -530,7 +529,7 @@ export default function ReportMap({
                 type="button"
                 onClick={clearLayers}
                 disabled={activeLayers.length === 0}
-                className="focusable flex-1 rounded-md border border-line px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="focusable flex-1 rounded-lg bg-canvas px-2 py-1 text-[10.5px] font-semibold uppercase tracking-wide text-ink-600 transition-colors hover:bg-canvas-subtle hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
                 None
               </button>

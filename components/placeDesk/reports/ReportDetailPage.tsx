@@ -39,7 +39,7 @@ export default function ReportDetailPage({ reportId }: { reportId: string }) {
 
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-canvas text-ink-900">
-      <header className="relative z-30 flex h-14 shrink-0 items-center gap-3 border-b border-line bg-white px-3 sm:px-4">
+      <header className="relative z-30 flex h-14 shrink-0 items-center gap-3 bg-white px-3 shadow-xs sm:px-4">
         <Link href="/" aria-label="PlaceDesk home" className="focusable rounded-lg">
           <PlaceDeskLogo variant="compact" size={34} />
         </Link>
@@ -48,7 +48,7 @@ export default function ReportDetailPage({ reportId }: { reportId: string }) {
 
         <Link
           href="/dashboard?tab=reports"
-          className="focusable inline-flex items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700"
+          className="focusable inline-flex items-center gap-1.5 rounded-xl bg-canvas px-3 py-1.5 text-[12px] font-medium text-ink-700 transition-colors hover:bg-canvas-subtle hover:text-brand-700"
         >
           <FiArrowLeft className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">All reports</span>
@@ -75,7 +75,7 @@ export default function ReportDetailPage({ reportId }: { reportId: string }) {
           <select
             value={themeId}
             onChange={(e) => setThemeId(e.target.value)}
-            className="focusable h-9 rounded-lg border border-line bg-white px-2 text-[12px] text-ink-700 outline-none"
+            className="focusable h-8 rounded-xl bg-canvas px-2.5 text-[12px] text-ink-700 outline-none hover:bg-canvas-subtle"
           >
             {MAP_THEMES.map((t) => (
               <option key={t.id} value={t.id}>
@@ -87,7 +87,7 @@ export default function ReportDetailPage({ reportId }: { reportId: string }) {
 
         <Link
           href="/dashboard"
-          className="focusable hidden items-center gap-1.5 rounded-lg border border-line px-2.5 py-1.5 text-[12px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700 lg:inline-flex"
+          className="focusable hidden items-center gap-1.5 rounded-xl bg-canvas px-3 py-1.5 text-[12px] font-medium text-ink-700 transition-colors hover:bg-canvas-subtle hover:text-brand-700 lg:inline-flex"
         >
           <FiHome className="h-3.5 w-3.5" />
           Workspace
@@ -111,7 +111,7 @@ export default function ReportDetailPage({ reportId }: { reportId: string }) {
 function ReportNotFound({ reportId }: { reportId: string }) {
   return (
     <div className="flex min-h-0 flex-1 items-center justify-center px-6 py-10">
-      <div className="max-w-md rounded-xl border border-line bg-white p-6 text-center">
+      <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-sm">
         <h1 className="text-[16px] font-semibold text-ink-900">
           Report not found
         </h1>

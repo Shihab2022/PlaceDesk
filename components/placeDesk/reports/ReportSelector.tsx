@@ -50,7 +50,7 @@ export default function ReportSelector({
         disabled={disabled || options.length === 0}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="focusable flex w-full items-center gap-2.5 rounded-xl border border-line bg-white px-3 py-2.5 text-left transition-colors hover:border-brand-300 disabled:opacity-60"
+        className="focusable flex w-full items-center gap-2.5 rounded-xl bg-canvas px-3 py-2.5 text-left transition-colors hover:bg-canvas-subtle disabled:opacity-60"
       >
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
           <FiFileText className="h-4 w-4" />
@@ -73,7 +73,7 @@ export default function ReportSelector({
       {open && (
         <ul
           role="listbox"
-          className="anim-fade-in absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-80 overflow-y-auto rounded-xl border border-line bg-white p-1.5 shadow-xl shadow-ink-900/10"
+          className="anim-fade-in absolute left-0 right-0 top-[calc(100%+6px)] z-40 max-h-80 overflow-y-auto rounded-2xl bg-white p-2 shadow-xl shadow-ink-900/10"
         >
           {options.map((option) => {
             const isActive = option.key === active?.key;

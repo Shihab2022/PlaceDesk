@@ -163,7 +163,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
             setQuery("");
           }}
           aria-label="Choose collection"
-          className="focusable h-9 max-w-full rounded-lg border border-line bg-white px-2 text-[12.5px] text-ink-700 outline-none"
+          className="focusable h-9 max-w-full rounded-xl bg-canvas px-3 text-[12.5px] text-ink-700 outline-none hover:bg-canvas-subtle"
         >
           {sources.map((s) => (
             <option key={s.id} value={s.id}>
@@ -180,17 +180,17 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
           }}
           placeholder="Filter rows…"
           aria-label="Filter rows"
-          className="focusable h-9 min-w-[160px] flex-1 rounded-lg border border-line bg-white px-3 text-[12.5px] text-ink-900 outline-none placeholder:text-ink-400 focus:border-brand-400 sm:max-w-[280px]"
+          className="focusable h-9 min-w-[160px] flex-1 rounded-xl bg-canvas px-3.5 text-[12.5px] text-ink-900 outline-none placeholder:text-ink-400 focus:bg-white focus:ring-2 focus:ring-brand-500/20 sm:max-w-[280px]"
         />
-        <div className="flex overflow-hidden rounded-lg border border-line">
+        <div className="flex overflow-hidden rounded-xl bg-canvas p-0.5">
           {(["table", "json"] as const).map((v) => (
             <button
               key={v}
               type="button"
               onClick={() => setView(v)}
               aria-pressed={view === v}
-              className={`focusable px-3 py-1.5 text-[12px] font-medium capitalize transition-colors ${
-                view === v ? "bg-ink-900 text-white" : "bg-white text-ink-500"
+              className={`focusable rounded-lg px-3 py-1 text-[12px] font-semibold capitalize transition-all ${
+                view === v ? "bg-white text-ink-900 shadow-xs" : "text-ink-500 hover:text-ink-800"
               }`}
             >
               {v}
@@ -207,7 +207,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-[12px]">
             <thead>
-              <tr className="border-b border-line text-[10.5px] uppercase tracking-wide text-ink-400">
+              <tr className="border-b border-line/40 text-[10.5px] uppercase tracking-wide text-ink-400">
                 {columns.map((col) => (
                   <th key={col} className="whitespace-nowrap px-3 py-2 font-semibold">
                     {col}
@@ -215,7 +215,7 @@ export default function ExplorerTab({ model }: { model: ReportModel }) {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-line/40">
               {pageRows.map((row, i) => (
                 <tr key={`${safePage}-${i}`} className="hover:bg-canvas/60">
                   {columns.map((col) => (

@@ -232,14 +232,14 @@ export default function ReportDashboard({
         {topBar}
 
         {status === "loading" && (
-          <div className="rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-[12.5px] font-medium text-brand-700">
+          <div className="rounded-2xl bg-brand-50 px-4 py-2.5 text-[12.5px] font-medium text-brand-700 shadow-xs">
             Loading report… fetching {selected.siteName}
           </div>
         )}
 
         {/* 1 — The catchment map leads the report */}
         <ReportSectionShell id="map">
-          <div className="relative h-[420px] overflow-hidden rounded-xl border border-line bg-canvas sm:h-[460px] xl:h-[520px]">
+          <div className="relative h-[420px] overflow-hidden rounded-2xl bg-canvas shadow-sm sm:h-[460px] xl:h-[520px]">
             <ReportMapSurface
               key={selected.key}
               model={selected}
@@ -302,9 +302,9 @@ export default function ReportDashboard({
         </ReportSectionShell>
 
         {/* Footer summary */}
-        <div className="rounded-xl border border-line bg-white px-4 py-3 text-[11.5px] text-ink-500 sm:px-5">
+        <div className="rounded-2xl bg-white px-5 py-4 text-[12px] text-ink-500 shadow-xs sm:px-6">
           End of report ·{" "}
-          <span className="font-mono text-ink-700">{selected.reportId}</span> ·{" "}
+          <span className="font-mono font-medium text-ink-700">{selected.reportId}</span> ·{" "}
           {REPORT_SECTIONS.length} sections
         </div>
       </div>

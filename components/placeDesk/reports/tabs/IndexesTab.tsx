@@ -61,13 +61,15 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
           subtitle="Normalized 0–5 style scores for the catchment"
         >
           {grouped.length ? (
-            <ColumnChart
-              data={grouped.slice(0, 12).map((m) => ({
+            <ExpandableColumnChart
+              data={grouped.map((m) => ({
                 label: humanizeKey(m.key),
                 value: m.value,
               }))}
               format={(v) => formatDecimal(v, 1)}
               height={210}
+              initial={10}
+              noun="indexes"
             />
           ) : (
             <EmptyState title="No grouped indexes" />
@@ -80,7 +82,7 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
         >
           {fromCounts.length ? (
             <div className="space-y-0.5">
-              {fromCounts.map((m) => (
+              {fromCounts.slice(0, fromCountsList.visibleCount).map((m) => (
                 <BarRow
                   key={m.key}
                   label={humanizeKey(m.key)}
@@ -90,6 +92,13 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
                   color="#14B8A6"
                 />
               ))}
+              <ShowMore
+                expanded={fromCountsList.expanded}
+                total={fromCountsList.total}
+                visible={fromCountsList.visible}
+                onToggle={fromCountsList.toggle}
+                noun="indexes"
+              />
             </div>
           ) : (
             <EmptyState title="No count-based indexes" />
@@ -117,7 +126,7 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
                 format={(v) => `${formatDecimal(v, 1)}%`}
               />
               <div className="space-y-0.5">
-                {weights.map((w) => (
+                {weights.slice(0, weightsList.visibleCount).map((w) => (
                   <BarRow
                     key={w.key}
                     label={w.label}
@@ -127,6 +136,13 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
                     color="#EC4899"
                   />
                 ))}
+                <ShowMore
+                  expanded={weightsList.expanded}
+                  total={weightsList.total}
+                  visible={weightsList.visible}
+                  onToggle={weightsList.toggle}
+                  noun="factors"
+                />
               </div>
             </div>
           ) : (
@@ -139,8 +155,8 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
           subtitle={`${formatInt(counts.length)} measured categories · scale max ${formatInt(countScale)}`}
         >
           {counts.length ? (
-            <div className="max-h-[420px] space-y-0.5 overflow-y-auto pr-1">
-              {counts.map((m) => (
+            <div className="space-y-0.5">
+              {counts.slice(0, countsList.visibleCount).map((m) => (
                 <BarRow
                   key={m.key}
                   label={humanizeKey(m.key)}
@@ -150,6 +166,13 @@ export default function IndexesTab({ model }: { model: ReportModel }) {
                   color="#2563EB"
                 />
               ))}
+              <ShowMore
+                expanded={countsList.expanded}
+                total={countsList.total}
+                visible={countsList.visible}
+                onToggle={countsList.toggle}
+                noun="categories"
+              />
             </div>
           ) : (
             <EmptyState title="No POI counts" />

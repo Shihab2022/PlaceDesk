@@ -55,8 +55,8 @@ export default function ReportHeader({
   );
 
   return (
-    <header className="rounded-xl border border-line bg-white px-4 py-4 sm:px-5">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+    <header className="rounded-2xl bg-white px-5 py-5 shadow-sm sm:px-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-brand-700">
             Location intelligence report
@@ -64,9 +64,9 @@ export default function ReportHeader({
           <h1 className="mt-1 truncate text-[20px] font-semibold leading-tight text-ink-900 sm:text-[22px]">
             {model ? model.siteName : "Loading report…"}
           </h1>
-          <div className="mt-2">{facts}</div>
+          <div className="mt-2.5">{facts}</div>
           {model && (
-            <p className="mt-2 text-[11.5px] text-ink-500">
+            <p className="mt-2.5 text-[11.5px] text-ink-500">
               Report ID <span className="font-mono text-ink-700">{model.reportId}</span>
               {formatDate(model.createdAt) !== "N/A" && (
                 <> · {formatDate(model.createdAt)}</>
@@ -75,7 +75,7 @@ export default function ReportHeader({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center lg:shrink-0">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center lg:shrink-0">
           <ReportSelector
             options={options}
             selectedKey={selectedKey}
@@ -93,7 +93,7 @@ export default function ReportHeader({
                     ? "Export the report map as an image"
                     : "Open the Map tab to export an image"
                 }
-                className="focusable inline-flex h-[42px] items-center gap-2 rounded-xl border border-line bg-white px-3 text-[12.5px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="focusable inline-flex h-[42px] items-center gap-2 rounded-xl bg-canvas px-3.5 text-[12.5px] font-medium text-ink-700 transition-colors hover:bg-canvas-subtle hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <FiImage className="h-4 w-4" />
                 Export

@@ -158,7 +158,7 @@ export default function MarketTab({ model }: { model: ReportModel }) {
           ].map((tile) => (
             <div
               key={tile.label}
-              className="rounded-lg border border-line bg-canvas/60 px-3 py-2.5"
+              className="rounded-xl bg-canvas/60 px-3.5 py-3"
             >
               <p className="truncate text-[10.5px] font-semibold uppercase tracking-wide text-ink-400">
                 {tile.label}

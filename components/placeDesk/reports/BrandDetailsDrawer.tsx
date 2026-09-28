@@ -100,16 +100,16 @@ export default function BrandDetailsDrawer({
       <aside
         role="dialog"
         aria-label="Brand details"
-        className="anim-fade-right fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col border-l border-line bg-white shadow-2xl"
+        className="anim-fade-right fixed inset-y-0 right-0 z-50 flex w-full max-w-[420px] flex-col bg-white shadow-2xl shadow-ink-900/15"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
+        <div className="flex items-start justify-between gap-3 px-5 py-4">
           <div className="flex min-w-0 items-center gap-3">
             {brand.brand_logo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={brand.brand_logo}
                 alt=""
-                className="h-9 w-9 shrink-0 rounded-lg object-contain"
+                className="h-9 w-9 shrink-0 rounded-xl object-contain bg-canvas p-1"
               />
             ) : null}
             <div className="min-w-0">
@@ -125,7 +125,7 @@ export default function BrandDetailsDrawer({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="focusable rounded-lg border border-line p-1.5 text-ink-500 transition-colors hover:text-brand-700"
+            className="focusable rounded-xl bg-canvas p-2 text-ink-500 transition-colors hover:bg-canvas-subtle hover:text-brand-700"
           >
             <FiX className="h-4 w-4" />
           </button>

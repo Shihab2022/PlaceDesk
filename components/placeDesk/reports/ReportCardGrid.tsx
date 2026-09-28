@@ -31,7 +31,7 @@ import {
 /** One headline stat on a card. */
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <span className="flex min-w-0 flex-col rounded-lg border border-line/70 bg-canvas/60 px-2.5 py-1.5">
+    <span className="flex min-w-0 flex-col rounded-xl bg-canvas/70 px-2.5 py-1.5">
       <span className="truncate text-[10px] font-semibold uppercase tracking-wide text-ink-400">
         {label}
       </span>
@@ -85,10 +85,10 @@ function ReportCard({
   const growth = growthLabel(card.clusterGrowthRate);
 
   return (
-    <div className="group relative flex flex-col rounded-xl border border-line bg-white p-4 transition-all focus-within:border-brand-400 hover:-translate-y-px hover:border-brand-300 hover:shadow-md">
+    <div className="group relative flex flex-col rounded-2xl bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
       <span className="flex items-start gap-3">
         <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[12px] font-bold"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[12px] font-bold"
           style={{ backgroundColor: `${card.color}1A`, color: card.color }}
           aria-hidden
         >
@@ -114,14 +114,14 @@ function ReportCard({
 
       <div className="mt-3 flex-1">
         {failed ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50/70 px-3 py-2.5">
+          <div className="rounded-xl bg-rose-50/80 px-3 py-2.5">
             <p className="text-[11.5px] font-medium text-rose-700">
               {card.error ?? "Could not load this report's details."}
             </p>
             <button
               type="button"
               onClick={onRetry}
-              className="focusable mt-2 inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-white px-2.5 py-1 text-[11.5px] font-semibold text-rose-700 transition-colors hover:bg-rose-50"
+              className="focusable mt-2 inline-flex items-center gap-1.5 rounded-lg bg-rose-100 px-2.5 py-1 text-[11.5px] font-semibold text-rose-700 transition-colors hover:bg-rose-200"
             >
               <FiRefreshCw className="h-3 w-3" />
               Retry
@@ -133,17 +133,17 @@ function ReportCard({
           <>
             <div className="flex flex-wrap items-center gap-1.5">
               {card.catchmentLabel && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-brand-200 bg-brand-50 px-2 py-0.5 text-[10.5px] font-medium text-brand-700">
+                <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-0.5 text-[10.5px] font-medium text-brand-700">
                   {card.catchmentLabel}
                 </span>
               )}
               {card.location && (
-                <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-line bg-canvas px-2 py-0.5 text-[10.5px] font-medium text-ink-500">
+                <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-canvas px-2.5 py-0.5 text-[10.5px] font-medium text-ink-500">
                   <FiMapPin className="h-3 w-3 shrink-0" />
                   <span className="truncate">{card.location}</span>
                 </span>
               )}
-              <span className="inline-flex items-center gap-1 rounded-full border border-line bg-canvas px-2 py-0.5 text-[10.5px] font-medium text-ink-500">
+              <span className="inline-flex items-center gap-1 rounded-full bg-canvas px-2.5 py-0.5 text-[10.5px] font-medium text-ink-500">
                 <FiCalendar className="h-3 w-3" />
                 {formatDate(card.createdAt)}
               </span>
@@ -183,7 +183,7 @@ function ReportCard({
         )}
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-2 border-t border-line/60 pt-3">
+      <div className="mt-4 flex items-center justify-between gap-2 pt-2">
         <span
           className="truncate font-mono text-[10.5px] text-ink-400"
           title={card.path}
@@ -193,7 +193,7 @@ function ReportCard({
         <Link
           href={`/report/${encodeURIComponent(card.id)}`}
           aria-label={`Open the full report for ${card.name}`}
-          className="focusable inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-600 px-3 py-1.5 text-[12px] font-semibold text-white transition-colors hover:bg-brand-700"
+          className="focusable inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-brand-600 px-3.5 py-1.5 text-[12px] font-semibold text-white shadow-xs transition-colors hover:bg-brand-700"
         >
           Open report
           <FiArrowRight className="h-3.5 w-3.5" />
@@ -208,7 +208,7 @@ export default function ReportCardGrid() {
 
   if (!cards.length) {
     return (
-      <div className="mt-4 rounded-xl border border-dashed border-line bg-white p-6 text-center text-[13px] text-ink-500">
+      <div className="mt-4 rounded-2xl bg-white p-8 text-center text-[13px] text-ink-500 shadow-sm">
         No reports are configured yet.
       </div>
     );
@@ -225,7 +225,7 @@ export default function ReportCardGrid() {
         <button
           type="button"
           onClick={reload}
-          className="focusable inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[11.5px] font-medium text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+          className="focusable inline-flex items-center gap-1.5 rounded-xl bg-canvas px-3 py-1.5 text-[11.5px] font-semibold text-ink-600 transition-colors hover:bg-canvas-subtle hover:text-brand-700"
         >
           <FiRefreshCw className="h-3.5 w-3.5" />
           Refresh

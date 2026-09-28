@@ -17,7 +17,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={`rounded-xl border border-line bg-white ${className}`}>
+    <div className={`rounded-2xl bg-white shadow-sm transition-shadow hover:shadow-md ${className}`}>
       {children}
     </div>
   );
@@ -45,32 +45,32 @@ export function SectionCard({
   const contentId = useId();
 
   return (
-    <section id={id} className={`rounded-xl border border-line bg-white ${className}`}>
-      <div className="flex items-start justify-between gap-3 px-4 pt-4 sm:px-5">
+    <section id={id} className={`rounded-2xl bg-white shadow-sm ${className}`}>
+      <div className="flex items-start justify-between gap-3 px-5 pt-5 sm:px-6">
         <div className="min-w-0">
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls={contentId}
-            className="focusable -ml-1 flex items-center gap-1.5 rounded-md text-left"
+            className="focusable -ml-1 flex items-center gap-1.5 rounded-lg text-left"
           >
             <FiChevronDown
               className={`h-4 w-4 shrink-0 text-ink-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
             />
-            <h3 className="truncate text-[14px] font-semibold text-ink-900">
+            <h3 className="truncate text-[15px] font-semibold text-ink-900">
               {title}
             </h3>
           </button>
           {subtitle && (
-            <p className="mt-0.5 pl-4 text-[12px] text-ink-500">{subtitle}</p>
+            <p className="mt-0.5 pl-5 text-[12px] text-ink-500">{subtitle}</p>
           )}
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </div>
       <div
         id={contentId}
-        className={`px-4 pb-4 pt-3 sm:px-5 ${open ? "" : "hidden"}`}
+        className={`px-5 pb-5 pt-3 sm:px-6 ${open ? "" : "hidden"}`}
       >
         {open && children}
       </div>
@@ -94,53 +94,46 @@ export function StatTile({
   icon?: ReactNode;
   colorScheme?: "brand" | "blue" | "emerald" | "amber" | "violet" | "rose" | "teal";
 }) {
-  const schemes: Record<string, { border: string; bg: string; iconBg: string; iconColor: string; valueColor: string }> = {
+  const schemes: Record<string, { bg: string; iconBg: string; iconColor: string; valueColor: string }> = {
     brand: {
-      border: "border-brand-200",
-      bg: "bg-linear-to-br from-brand-50/80 via-white to-brand-50/20",
-      iconBg: "bg-brand-100 text-brand-700",
+      bg: "bg-linear-to-br from-brand-50/90 via-white to-brand-50/30",
+      iconBg: "bg-brand-100/90 text-brand-700",
       iconColor: "text-brand-700",
       valueColor: "text-brand-800",
     },
     blue: {
-      border: "border-blue-200",
-      bg: "bg-linear-to-br from-blue-50/80 via-white to-blue-50/20",
-      iconBg: "bg-blue-100 text-blue-700",
+      bg: "bg-linear-to-br from-blue-50/90 via-white to-blue-50/30",
+      iconBg: "bg-blue-100/90 text-blue-700",
       iconColor: "text-blue-700",
       valueColor: "text-blue-900",
     },
     emerald: {
-      border: "border-emerald-200",
-      bg: "bg-linear-to-br from-emerald-50/80 via-white to-emerald-50/20",
-      iconBg: "bg-emerald-100 text-emerald-700",
+      bg: "bg-linear-to-br from-emerald-50/90 via-white to-emerald-50/30",
+      iconBg: "bg-emerald-100/90 text-emerald-700",
       iconColor: "text-emerald-700",
       valueColor: "text-emerald-900",
     },
     amber: {
-      border: "border-amber-200",
-      bg: "bg-linear-to-br from-amber-50/80 via-white to-amber-50/20",
-      iconBg: "bg-amber-100 text-amber-700",
+      bg: "bg-linear-to-br from-amber-50/90 via-white to-amber-50/30",
+      iconBg: "bg-amber-100/90 text-amber-700",
       iconColor: "text-amber-700",
       valueColor: "text-amber-900",
     },
     violet: {
-      border: "border-purple-200",
-      bg: "bg-linear-to-br from-purple-50/80 via-white to-purple-50/20",
-      iconBg: "bg-purple-100 text-purple-700",
+      bg: "bg-linear-to-br from-purple-50/90 via-white to-purple-50/30",
+      iconBg: "bg-purple-100/90 text-purple-700",
       iconColor: "text-purple-700",
       valueColor: "text-purple-900",
     },
     rose: {
-      border: "border-rose-200",
-      bg: "bg-linear-to-br from-rose-50/80 via-white to-rose-50/20",
-      iconBg: "bg-rose-100 text-rose-700",
+      bg: "bg-linear-to-br from-rose-50/90 via-white to-rose-50/30",
+      iconBg: "bg-rose-100/90 text-rose-700",
       iconColor: "text-rose-700",
       valueColor: "text-rose-900",
     },
     teal: {
-      border: "border-teal-200",
-      bg: "bg-linear-to-br from-teal-50/80 via-white to-teal-50/20",
-      iconBg: "bg-teal-100 text-teal-700",
+      bg: "bg-linear-to-br from-teal-50/90 via-white to-teal-50/30",
+      iconBg: "bg-teal-100/90 text-teal-700",
       iconColor: "text-teal-700",
       valueColor: "text-teal-900",
     },
@@ -150,10 +143,10 @@ export function StatTile({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+      className={`relative overflow-hidden rounded-2xl p-4.5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md ${
         current
-          ? `${current.border} ${current.bg}`
-          : "border-line bg-white shadow-xs hover:border-brand-200"
+          ? `${current.bg} shadow-xs`
+          : "bg-white shadow-xs hover:shadow-md"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -162,7 +155,7 @@ export function StatTile({
         </p>
         {icon && (
           <span
-            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl ${
               current ? current.iconBg : "bg-canvas text-ink-500"
             }`}
           >
@@ -191,15 +184,15 @@ export function Pill({
   tone?: "neutral" | "brand" | "success" | "warning" | "danger";
 }) {
   const tones: Record<string, string> = {
-    neutral: "bg-canvas text-ink-500 border-line",
-    brand: "bg-brand-50 text-brand-700 border-brand-200",
-    success: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    warning: "bg-amber-50 text-amber-700 border-amber-200",
-    danger: "bg-rose-50 text-rose-700 border-rose-200",
+    neutral: "bg-canvas text-ink-600",
+    brand: "bg-brand-50 text-brand-700",
+    success: "bg-emerald-50 text-emerald-700",
+    warning: "bg-amber-50 text-amber-700",
+    danger: "bg-rose-50 text-rose-700",
   };
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${tones[tone]}`}
     >
       {children}
     </span>
@@ -249,7 +242,7 @@ export function EmptyState({
   message?: string;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line bg-canvas/60 px-6 py-10 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl bg-canvas/60 px-6 py-10 text-center">
       <FiInbox className="h-7 w-7 text-ink-400" />
       <p className="mt-3 text-[13px] font-semibold text-ink-700">{title}</p>
       {message && <p className="mt-1 max-w-md text-[12px] text-ink-500">{message}</p>}
@@ -265,7 +258,7 @@ export function ErrorState({
   onRetry?: () => void;
 }) {
   return (
-    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-xl border border-rose-200 bg-rose-50/60 px-6 py-10 text-center">
+    <div className="flex min-h-[280px] flex-col items-center justify-center rounded-2xl bg-rose-50/70 p-6 text-center shadow-xs">
       <FiAlertTriangle className="h-7 w-7 text-rose-500" />
       <p className="mt-3 text-[13px] font-semibold text-rose-700">
         Could not load the report
@@ -275,7 +268,7 @@ export function ErrorState({
         <button
           type="button"
           onClick={onRetry}
-          className="focusable mt-4 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+          className="focusable mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
         >
           <FiRefreshCw className="h-3.5 w-3.5" />
           Try again
@@ -395,8 +388,9 @@ export function useExpandable(
 ) {
   const [expanded, setExpanded] = useState(false);
   const toggle = useCallback(() => setExpanded((v) => !v), []);
-  const visibleCount = expanded ? total : Math.min(initial, total);
-  return { expanded, visibleCount, toggle };
+  const visible = Math.min(initial, total);
+  const visibleCount = expanded ? total : visible;
+  return { expanded, total, visible, visibleCount, toggle };
 }
 
 /**
@@ -425,7 +419,7 @@ export function ShowMore({
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className="focusable inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-3 py-1.5 text-[11.5px] font-semibold text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+        className="focusable inline-flex items-center gap-1.5 rounded-xl bg-canvas px-3.5 py-1.5 text-[11.5px] font-semibold text-ink-600 transition-colors hover:bg-canvas-subtle hover:text-brand-700"
       >
         <FiChevronDown
           className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
@@ -481,11 +475,11 @@ export function PaginationBar({
   }
 
   const navBtn =
-    "focusable inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-lg border border-line bg-white px-2 text-[11.5px] font-medium text-ink-700 transition-colors hover:border-brand-300 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40";
+    "focusable inline-flex h-7 min-w-7 items-center justify-center gap-1 rounded-lg bg-canvas px-2 text-[11.5px] font-medium text-ink-700 transition-colors hover:bg-canvas-subtle hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-40";
 
   return (
     <div
-      className={`flex flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-3 text-[12px] ${className}`}
+      className={`flex flex-wrap items-center justify-between gap-2 pt-3 text-[12px] ${className}`}
     >
       <span className="tabular-nums text-ink-500">
         Showing <span className="font-semibold text-ink-800">{start}</span>–
@@ -499,7 +493,7 @@ export function PaginationBar({
         {onPageSizeChange && (
           <span className="mr-1 flex items-center gap-1">
             <span className="text-ink-500">Rows</span>
-            <span className="flex overflow-hidden rounded-lg border border-line">
+            <span className="flex overflow-hidden rounded-lg bg-canvas p-0.5">
               {pageSizeOptions.map((size) => (
                 <button
                   key={size}
@@ -508,10 +502,10 @@ export function PaginationBar({
                   aria-pressed={pageSize === size}
                   aria-label={`Show ${size} rows per page`}
                   title={`Show ${size} rows per page`}
-                  className={`focusable h-7 px-2 text-[11.5px] font-semibold tabular-nums transition-colors ${
+                  className={`focusable h-6 rounded-md px-2 text-[11.5px] font-semibold tabular-nums transition-colors ${
                     pageSize === size
-                      ? "bg-ink-900 text-white"
-                      : "bg-white text-ink-500 hover:text-brand-700"
+                      ? "bg-white text-ink-900 shadow-xs"
+                      : "text-ink-500 hover:text-brand-700"
                   }`}
                 >
                   {size}
@@ -555,7 +549,7 @@ export function PaginationBar({
               }
             }}
             aria-label="Page number"
-            className="focusable h-7 w-12 rounded-lg border border-line bg-white px-1.5 text-center text-[11.5px] font-semibold tabular-nums text-ink-900"
+            className="focusable h-7 w-12 rounded-lg bg-canvas px-1.5 text-center text-[11.5px] font-semibold tabular-nums text-ink-900 outline-none focus:bg-white focus:ring-2 focus:ring-brand-500/20"
           />
           <span className="tabular-nums">
             / {pageCount.toLocaleString("en-US")}

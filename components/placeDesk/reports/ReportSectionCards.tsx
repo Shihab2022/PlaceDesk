@@ -116,7 +116,7 @@ export default function ReportSectionCards({
             Everything is on this page — open a card to jump straight to it.
           </p>
         </div>
-        <span className="rounded-full border border-line bg-white px-2.5 py-1 text-[11px] font-semibold text-ink-500">
+        <span className="rounded-full bg-canvas px-3 py-1 text-[11px] font-semibold text-ink-500">
           {REPORT_SECTIONS.length} sections
         </span>
       </div>
@@ -131,8 +131,8 @@ export default function ReportSectionCards({
               type="button"
               onClick={() => onSelect(section.id)}
               aria-label={`Open ${section.label}`}
-              className={`focusable group relative flex w-full flex-col gap-3 overflow-hidden rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-ink-900/5 ${scheme.card} ${
-                isActive ? "border-brand-400 ring-2 ring-brand-200" : "border-line"
+              className={`focusable group relative flex w-full flex-col gap-3 overflow-hidden rounded-2xl p-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-ink-900/5 ${scheme.card} ${
+                isActive ? "ring-2 ring-brand-500/30 shadow-md" : ""
               }`}
             >
               <span className="flex items-start gap-3">
@@ -159,7 +159,7 @@ export default function ReportSectionCards({
                 {stats[section.id].map((stat) => (
                   <span
                     key={`${section.id}-${stat.label}`}
-                    className={`inline-flex items-baseline gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-medium ${scheme.chip}`}
+                    className={`inline-flex items-baseline gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ${scheme.chip}`}
                   >
                     <span className="font-bold tabular-nums">{stat.value}</span>
                     <span className="opacity-80">{stat.label}</span>

@@ -59,7 +59,7 @@ export default function ReportSectionShell({
                 .getElementById("report-sections")
                 ?.scrollIntoView({ behavior: "smooth", block: "start" })
             }
-            className="focusable inline-flex items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 py-1.5 text-[11.5px] font-medium text-ink-600 transition-colors hover:border-brand-300 hover:text-brand-700"
+            className="focusable inline-flex items-center gap-1.5 rounded-xl bg-canvas px-3 py-1.5 text-[11.5px] font-semibold text-ink-600 transition-colors hover:bg-canvas-subtle hover:text-brand-700"
           >
             <FiArrowUp className="h-3.5 w-3.5" />
             All sections

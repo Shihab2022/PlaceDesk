@@ -220,7 +220,7 @@ export default function BrandsTab({
                 {(quadrants ?? []).map((q) => (
                   <li
                     key={q.key}
-                    className="flex items-start gap-2.5 rounded-lg border border-line bg-canvas/50 px-3 py-2"
+                    className="flex items-start gap-2.5 rounded-xl bg-canvas/60 px-3.5 py-2.5"
                   >
                     <span
                       className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
@@ -278,7 +278,7 @@ export default function BrandsTab({
             }}
             placeholder="Search brand, category…"
             aria-label="Search brands"
-            className="focusable h-9 w-full min-w-[180px] flex-1 rounded-lg border border-line bg-white px-3 text-[12.5px] text-ink-900 outline-none placeholder:text-ink-400 focus:border-brand-400 sm:max-w-[260px]"
+            className="focusable h-9 w-full min-w-[180px] flex-1 rounded-xl bg-canvas px-3 text-[12.5px] text-ink-900 outline-none placeholder:text-ink-400 focus:bg-white focus:ring-2 focus:ring-brand-500/20 sm:max-w-[260px]"
           />
           <select
             value={sort}
@@ -287,7 +287,7 @@ export default function BrandsTab({
               resetPage();
             }}
             aria-label="Sort brands"
-            className="focusable h-9 rounded-lg border border-line bg-white px-2 text-[12.5px] text-ink-700 outline-none"
+            className="focusable h-9 rounded-xl bg-canvas px-2.5 text-[12.5px] text-ink-700 outline-none hover:bg-canvas-subtle"
           >
             <option value="reviews">Sort: Reviews/day</option>
             <option value="performance">Sort: Performance</option>
@@ -295,7 +295,7 @@ export default function BrandsTab({
             <option value="votes">Sort: Votes</option>
             <option value="name">Sort: Name</option>
           </select>
-          <label className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 text-[12px] text-ink-700">
+          <label className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-canvas px-3 text-[12px] text-ink-700 hover:bg-canvas-subtle">
             <input
               type="checkbox"
               checked={scoredOnly}
@@ -307,7 +307,7 @@ export default function BrandsTab({
             />
             Scored only
           </label>
-          <label className="flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 text-[12px] text-ink-700">
+          <label className="flex h-9 cursor-pointer items-center gap-1.5 rounded-xl bg-canvas px-3 text-[12px] text-ink-700 hover:bg-canvas-subtle">
             <input
               type="checkbox"
               checked={geoOnly}
@@ -325,7 +325,7 @@ export default function BrandsTab({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-[12.5px]">
               <thead>
-                <tr className="border-b border-line text-[10.5px] uppercase tracking-wide text-ink-400">
+                <tr className="border-b border-line/40 text-[10.5px] uppercase tracking-wide text-ink-400">
                   <th className="px-3 py-2 font-semibold">#</th>
                   <th className="px-3 py-2 font-semibold">Brand</th>
                   <th className="px-3 py-2 font-semibold">Category</th>
@@ -335,7 +335,7 @@ export default function BrandsTab({
                   <th className="px-3 py-2 text-right font-semibold">Votes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-line/40">
                 {pageRows.map((brand, i) => {
                   const rank = safePage * table.pageSize + i + 1;
                   return (

@@ -44,7 +44,7 @@ function CompetitorTable({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[560px] text-left text-[12.5px]">
           <thead>
-            <tr className="border-b border-line text-[10.5px] uppercase tracking-wide text-ink-400">
+            <tr className="border-b border-line/40 text-[10.5px] uppercase tracking-wide text-ink-400">
               <th className="px-3 py-2 font-semibold">Name</th>
               <th className="px-3 py-2 font-semibold">Type</th>
               <th className="px-3 py-2 text-right font-semibold">Distance</th>
@@ -52,7 +52,7 @@ function CompetitorTable({
               <th className="px-3 py-2 text-right font-semibold">Perf.</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-line">
+          <tbody className="divide-y divide-line/40">
             {shown.map((row, i) => (
               <tr key={`${row.id}-${table.page * table.pageSize + i}`} className="hover:bg-canvas/60">
                 <td className="px-3 py-2">
@@ -134,7 +134,7 @@ export default function CompetitorsTab({ model }: { model: ReportModel }) {
             {model.competitorsDomains.slice(0, 40).map((domain) => (
               <span
                 key={domain}
-                className="rounded-full border border-line bg-canvas px-2.5 py-0.5 text-[11px] text-ink-500"
+                className="rounded-full bg-canvas px-2.5 py-0.5 text-[11px] text-ink-600"
               >
                 {domain}
               </span>

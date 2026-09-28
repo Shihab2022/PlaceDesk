@@ -87,14 +87,14 @@ export default function PoisTab({ model }: { model: ReportModel }) {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[520px] text-left text-[12.5px]">
             <thead>
-              <tr className="border-b border-line text-[10.5px] uppercase tracking-wide text-ink-400">
+              <tr className="border-b border-line/40 text-[10.5px] uppercase tracking-wide text-ink-400">
                 <th className="px-3 py-2 font-semibold">Category</th>
                 <th className="px-3 py-2 text-right font-semibold">POIs</th>
                 <th className="px-3 py-2 text-right font-semibold">Share</th>
                 <th className="px-3 py-2 text-right font-semibold">Avg rev/day</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-line/40">
               {sortedEntries
                 .slice(
                   categories.page * categories.pageSize,

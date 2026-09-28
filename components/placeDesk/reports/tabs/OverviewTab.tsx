@@ -62,7 +62,7 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left text-[12.5px]">
                 <thead>
-                  <tr className="border-b border-line text-[10.5px] uppercase tracking-wide text-ink-400">
+                  <tr className="border-b border-line/40 text-[10.5px] uppercase tracking-wide text-ink-400">
                     <th className="px-3 py-2 font-semibold">Cluster</th>
                     <th className="px-3 py-2 font-semibold">Locality</th>
                     <th className="px-3 py-2 text-right font-semibold">Area</th>
@@ -70,7 +70,7 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
                     <th className="px-3 py-2 text-right font-semibold">Growth</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-line/40">
                   {model.highStreets
                     .slice(
                       clusters.page * clusters.pageSize,
@@ -140,13 +140,13 @@ export default function OverviewTab({ model }: { model: ReportModel }) {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] text-left text-[12.5px]">
                 <thead>
-                  <tr className="border-b border-line text-[10.5px] uppercase tracking-wide text-ink-400">
+                  <tr className="border-b border-line/40 text-[10.5px] uppercase tracking-wide text-ink-400">
                     <th className="px-3 py-2 font-semibold">Project</th>
                     <th className="px-3 py-2 text-right font-semibold">Units</th>
                     <th className="px-3 py-2 text-right font-semibold">Distance</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-line/40">
                   {model.projects.projects
                     .slice(
                       projects.page * projects.pageSize,
